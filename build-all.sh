@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+build_sbkeys() {
+    (
+        cd "$(pwd)/sbkeys"
+        ./build.sh
+    )
+}
+
+build_firmware() {
+    (
+        cd "$(pwd)/firmware"
+        ./build.sh
+    )
+}
+
+build_kernel() {
+    (
+        cd "$(pwd)/kernel"
+        ./build.sh
+    )
+}
+
+build_userland() {
+    (
+        cd "$(pwd)/userland"
+        ./build.sh
+    )
+}
+
+build_uki() {
+    (
+        cd "$(pwd)/uki"
+        ./build.sh
+    )  
+}
+
+time build_sbkeys | tee logs/build_sbkeys.log
+time build_firmware | tee logs/build_firmware.log
+time build_kernel | tee logs/build_kernel.log
+time build_userland | tee logs/build_userland.log
+time build_uki | tee logs/build_uki.log

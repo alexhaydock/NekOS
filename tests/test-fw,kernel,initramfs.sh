@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+
+# This test validates:
+#   - OVMF firmware build
+#   - Kernel build
+#   - Initramfs build
+
+# Copy VARS to temp location
+cp -fv ../firmware/build/OVMF_VARS_INSECURE.json /tmp/OVMF_VARS_INSECURE.json
+
+# Run with OVMF CODE and VARS
+qemu-system-x86_64 \
+  -m 2G \
+  -machine q35,smm=off,vmport=off,accel=kvm \
+  -kernel ../kernel/build/bzImage \
+  -initrd ../userland/build/initramfs \
+  -drive if=pflash,format=raw,unit=0,file=../firmware/build/OVMF_CODE.fd,readonly=on \
+  -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_INSECURE.json

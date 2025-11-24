@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+
+# This test validates:
+#   - OVMF firmware build
+#   - Kernel build
+#   - Initramfs build
+#   - UKI build
+#   - Secure Boot (using default Microsoft keys, which should fail)
+
+# Copy Secure Boot VARS with Microsoft keys to temp location
+cp -fv ../firmware/build/OVMF_VARS_MS.json /tmp/OVMF_VARS_MS.json
+
+# Run with custom OVMF CODE and VARS store we built based
+# on the pre-populated one found in the uptream Fedora package
+# (we expect this to fail as our image isn't signed by a
+# Microsoft key)
+#
+# We also specifically need to boot the UKI here since
+# otherwise QEMU doesn't fully validate the Secure Boot
+# state (it flashes a warning that passing the kernel
+# directly is insecure)
+qemu-system-x86_64 \
+  -m 2G \
+  -machine q35,smm=off,vmport=off,accel=kvm \
+  -kernel ../uki/build/uki.efi \
+  -drive if=pflash,format=raw,unit=0,file=../firmware/build/OVMF_CODE.fd,readonly=on \
+  -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_MS.json

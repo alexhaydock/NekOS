@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+
+# This test validates:
+#   - Kernel build
+
+qemu-system-x86_64 \
+  -m 2G \
+  -machine q35,smm=off,vmport=off,accel=kvm \
+  -kernel ../kernel/build/bzImage

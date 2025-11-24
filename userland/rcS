@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# Mount some necessary FHS virtual filesystems
+mount -t sysfs /sys /sys
+mount -t proc /proc /proc
+mount -t devtmpfs /dev /dev
+mkdir /dev/shm
+
+# We need to manually source .bashrc I think because we've
+# got bash acting as sh rather than bash
+source /.bashrc
+
+# Launch seatd so we're ready for tinywl
+seatd&
+
+# This is ugly and will probably break if we change
+# anything about the QEMU environment, but we can read
+# directly out of sysfs and make some assumptions about
+# the first modesetting options to in the list being
+# the one we're actually using
+export WIDTH=$(head -n 1 /sys/class/drm/card0-Virtual-1/modes | cut -d"x" -f1)
+export HEIGHT=$(head -n 1 /sys/class/drm/card0-Virtual-1/modes | cut -d"x" -f2)
+
+# Start our slideshow, sized to fill the screen resolution
+# we've hopefully just discovered correctly
+tinywl -s "exec swayimg -s fit -o random -w ${WIDTH},${HEIGHT} -l /opt/cats/"
