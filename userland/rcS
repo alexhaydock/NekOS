@@ -15,9 +15,9 @@ seatd&
 
 # This is ugly and will probably break if we change
 # anything about the QEMU environment, but we can read
-# directly out of sysfs and make some assumptions about
-# the first modesetting options to in the list being
-# the one we're actually using
+# directly out of sysfs and make the (probably unsafe)
+# assumption that the first modesetting option in the
+# list is the one we're actually using
 export WIDTH=$(head -n 1 /sys/class/drm/card0-Virtual-1/modes | cut -d"x" -f1)
 export HEIGHT=$(head -n 1 /sys/class/drm/card0-Virtual-1/modes | cut -d"x" -f2)
 

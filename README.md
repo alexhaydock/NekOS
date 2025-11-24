@@ -42,7 +42,7 @@ flowchart LR
 ```
 
 ## Build Instructions
-I don't support this as a general tool, but if you want to base your own project on this then all of the code should be fairly easy to understnad as I've tried to comment it where possible.
+I don't support this as a general tool, but if you want to base your own project on this then all of the code should be fairly easy to understand, as I've tried to comment it where possible.
 
 To build and test this, you need `podman` and `qemu`.
 
