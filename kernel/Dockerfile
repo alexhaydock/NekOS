@@ -1,10 +1,18 @@
 # Download and extract kernel tarball
 FROM docker.io/library/alpine:3.22 as kerneldownloader
-RUN mkdir /opt/download
-WORKDIR /opt/download
-ADD https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.58.tar.xz /opt/download/linux-6.12.58.tar.xz
-RUN tar xf /opt/download/linux-6.12.58.tar.xz
-RUN mv /opt/download/linux-6.12.58 /opt/download/linux
+
+# Download the Alpine aports tree because we want to use
+# the upstream linux-virt config as our base, and we
+# might as well take the package version from the APKBUILD
+# while we're at it
+RUN apk --no-cache add git
+RUN git clone --depth 1 https://git.alpinelinux.org/aports /opt/aports
+WORKDIR /opt
+RUN export KERNVER="$(grep ^pkgver /opt/aports/main/linux-lts/APKBUILD | cut -d'=' -f2)" && \
+    echo "Building Linux ${KERNVER}..." && \
+    wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNVER}.tar.xz -O /opt/kernel.tar.xz && \
+    tar xf /opt/kernel.tar.xz && \
+    mv /opt/linux-${KERNVER} /opt/linux
 
 # Start kernel build container
 FROM docker.io/library/alpine:3.22 as kernelbuilder
@@ -18,12 +26,20 @@ RUN apk add perl gmp-dev mpc1-dev mpfr-dev elfutils-dev bash flex bison zstd
 # Add bash to run the scripts shipped in the kernel's scripts/ dir
 RUN apk add bash
 
-# Copy kernel sources and enter directory
-COPY --from=kerneldownloader /opt/download/linux/ /opt/linux/
+# Copy kernel sources from download container
+COPY --from=kerneldownloader /opt/linux/ /opt/linux/
 WORKDIR /opt/linux
 
-# Configure the kernel to use the default upstream config
+# Generate kernel config
 RUN make defconfig
+
+# Here I attempted to use the Alpine upstream config for virt-lts instead, but it
+# didn't seem to result in a kernel that booted properly in QEMU with stdvga :/
+#
+# TODO - Needs investigation. Something to do with the specific Alpine .config
+#        not letting the bochs-drm output configure correctly?
+#COPY --from=kerneldownloader /opt/aports/main/linux-lts/virt.x86_64.config /opt/linux/.config
+#RUN make olddefconfig
 
 # Copy in kernel config fragments file to apply it over our
 # default config
@@ -31,7 +47,7 @@ COPY features.config /opt/linux/features.config
 RUN scripts/kconfig/merge_config.sh .config features.config
 
 # Build kernel
-RUN make -j6
+RUN make -j$(nproc)
 
 # Final container that just contains our kernel and nothing more
 FROM docker.io/library/alpine:3.22

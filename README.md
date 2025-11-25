@@ -14,7 +14,10 @@ This is a research and development Linux distribution that I put together with t
 
 I'm hoping to use this to research Verified Boot, Confidential Compute, and "Bring Your Own Firmware" type setups for physical-access threat models.
 
-Current features:
+### Key Features
+* Pictures of my cats!
+
+### Other Features
 * EDK II OVMF firmware for QEMU built from source
   * Built with support for [paravirtualised UEFI variables](https://www.qemu.org/docs/master/devel/uefi-vars.html#host-uefi-variable-service)
   * Built with Secure Boot support
@@ -77,16 +80,18 @@ Current tests:
 | test-fw,kernel,initramfs,uki.sh | Test firmware, kernel, and initramfs (packed into UKI). |
 | test-fw,kernel,initramfs,uki,sb-fail.sh | Test firmware, kernel, and initramfs (packed into UKI), with Microsoft Secure Boot keychain. It should **fail**. |
 | test-fw,kernel,initramfs,uki,sb-pass.sh | Test firmware, kernel, and initramfs (packed into UKI), with our custom Secure Boot keychain. It should **pass**. |
+| test-fw,kernel,initramfs,uki,sb-pass,virtio.sh | As above, but using a VirtIO GPU rather than the default `stdvga`. |
 
 ## Future Plans
-* GitHub Actions to automatically build + release a signed UKI for testing
+* GitHub Actions to automatically build + release a signed UKI + UEFI Vars that people can run and test
 * More validation / signing, including PCRs
 * Secure Boot validation from inside OS
   * PCR signing validation from inside OS, using vTPM
 * Reproducible firmware build with ability to pre-compute SEV hashes, allowing for Confidential Compute in BYOF environments
-* Slimmer kernel config, removing unnecessary modules and bloat
+* More interesting stuff in the userland
+  * Add another layer to the chain with a signed shim & systemd-boot?
 * ISO build process, for booting this on real hardware
 * And maybe more fun stuff in the userland? Who knows...
 
 ## License
-Any code in this repo which is capable of being subject to copyright is licensed as per the LICENSE file in the root of this repository. This does not include the images of my cats.
+Any code in this repo which is capable of being subject to copyright is licensed as per the LICENSE file in the root of this repository. This doesn't include the images of my cats.

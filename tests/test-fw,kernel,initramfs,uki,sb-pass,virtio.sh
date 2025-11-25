@@ -5,15 +5,13 @@
 #   - Kernel build
 #   - Initramfs build
 #   - UKI build
-#   - Secure Boot (using default Microsoft keys, which should fail)
+#   - Secure Boot (using custom keys, which should pass)
 
-# Copy Secure Boot VARS with Microsoft keys to temp location
-cp -fv ../firmware/build/OVMF_VARS_MS.json /tmp/OVMF_VARS_MS.json
+# Copy Secure Boot VARS with our custom keys to temp location
+cp -fv ../firmware/build/OVMF_VARS_CUSTOM.json /tmp/OVMF_VARS_CUSTOM.json
 
-# Run with custom OVMF CODE and VARS store we built based
-# on the pre-populated one found in the uptream Fedora package
-# (we expect this to fail as our image isn't signed by a
-# Microsoft key)
+# Run with custom OVMF CODE and custom VARS which contain
+# our custom Secure Boot key signing chain
 #
 # We also specifically need to boot the UKI here since
 # otherwise QEMU doesn't fully validate the Secure Boot
@@ -24,6 +22,7 @@ qemu-system-x86_64 \
   -machine q35,smm=off,vmport=off,accel=kvm \
   -kernel ../uki/build/uki.efi \
   -drive if=pflash,format=raw,unit=0,file=../firmware/build/OVMF_CODE.fd,readonly=on \
-  -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_MS.json \
+  -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_CUSTOM.json \
   -append "console=ttyS0" \
-  -serial stdio
+  -serial stdio \
+  -vga virtio

@@ -22,4 +22,6 @@ qemu-system-x86_64 \
   -machine q35,smm=off,vmport=off,accel=kvm \
   -kernel ../uki/build/uki.efi \
   -drive if=pflash,format=raw,unit=0,file=../firmware/build/OVMF_CODE.fd,readonly=on \
-  -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_CUSTOM.json
+  -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_CUSTOM.json \
+  -append "console=ttyS0" \
+  -serial stdio

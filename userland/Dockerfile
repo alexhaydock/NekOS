@@ -26,7 +26,7 @@ RUN sed -i 's/^# CONFIG_GETTY.*/CONFIG_GETTY=y/' .config && \
     sed -i 's/^# CONFIG_VI.*/CONFIG_VI=y/' .config
 
 # Build Toybox
-RUN make -j6
+RUN make -j$(nproc)
 
 # Create output dir
 RUN mkdir -p /opt/toybox/fs

@@ -15,4 +15,6 @@ qemu-system-x86_64 \
   -kernel ../kernel/build/bzImage \
   -initrd ../userland/build/initramfs \
   -drive if=pflash,format=raw,unit=0,file=../firmware/build/OVMF_CODE.fd,readonly=on \
-  -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_INSECURE.json
+  -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_INSECURE.json \
+  -append "console=ttyS0" \
+  -serial stdio

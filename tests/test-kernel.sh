@@ -6,4 +6,6 @@
 qemu-system-x86_64 \
   -m 2G \
   -machine q35,smm=off,vmport=off,accel=kvm \
-  -kernel ../kernel/build/bzImage
+  -kernel ../kernel/build/bzImage \
+  -append "console=ttyS0" \
+  -serial stdio
