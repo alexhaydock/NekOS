@@ -31,8 +31,14 @@ COPY --from=kerneldownloader /opt/linux/ /opt/linux/
 WORKDIR /opt/linux
 
 # Generate kernel config based on Alpine's upstream virt-lts kernel config
-COPY --from=kerneldownloader /opt/aports/main/linux-lts/virt.x86_64.config /opt/linux/.config
-RUN make olddefconfig
+#
+# Currently disabled since this config doesn't seem to include what we need
+# to set up a full graphical environment, even when applying our overlay below
+#COPY --from=kerneldownloader /opt/aports/main/linux-lts/virt.x86_64.config /opt/linux/.config
+#RUN make olddefconfig
+
+# Generate kernel config based on upstream defaults
+RUN make defconfig
 
 # Copy in kernel config fragments file to apply our own kernel config options
 COPY features.config /opt/linux/features.config
