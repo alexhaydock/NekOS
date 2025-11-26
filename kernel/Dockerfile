@@ -30,26 +30,31 @@ RUN apk add bash
 COPY --from=kerneldownloader /opt/linux/ /opt/linux/
 WORKDIR /opt/linux
 
-# Generate kernel config
-RUN make defconfig
-
-# Here I attempted to use the Alpine upstream config for virt-lts instead, but it
-# didn't seem to result in a kernel that booted properly in QEMU with stdvga :/
+# Generate kernel config based on Alpine's upstream virt-lts kernel config
 #
-# TODO - Needs investigation. Something to do with the specific Alpine .config
-#        not letting the bochs-drm output configure correctly?
+# Currently disabled since this config doesn't seem to include what we need
+# to set up a full graphical environment, even when applying our overlay below
 #COPY --from=kerneldownloader /opt/aports/main/linux-lts/virt.x86_64.config /opt/linux/.config
 #RUN make olddefconfig
 
-# Copy in kernel config fragments file to apply it over our
-# default config
+# Generate kernel config based on upstream defaults
+RUN make defconfig
+
+# Copy in kernel config fragments file to apply our own kernel config options
 COPY features.config /opt/linux/features.config
 RUN scripts/kconfig/merge_config.sh .config features.config
 
 # Build kernel
 RUN make -j$(nproc)
 
+# Install modules into directory
+RUN mkdir -p /opt/mod/lib/modules && \
+    make modules_install \
+        INSTALL_MOD_PATH="/opt/mod" \
+        INSTALL_MOD_STRIP=1
+
 # Final container that just contains our kernel and nothing more
 FROM docker.io/library/alpine:3.22
 COPY --from=kernelbuilder /opt/linux/arch/x86/boot/bzImage /opt/bzImage
+COPY --from=kernelbuilder /opt/mod /opt/mod
 WORKDIR /opt

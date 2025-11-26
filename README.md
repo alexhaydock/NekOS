@@ -30,15 +30,15 @@ I'm hoping to use this to research Verified Boot, Confidential Compute, and "Bri
 * Kernel + userland packed into a Unified Kernel Image (UKI)
 * UKI signed with a custom Secure Boot keychain
 
-## Technical Architecture
+## Boot Sequence
 ```mermaid
 flowchart LR
     fw[EDK II OVMF<br>Firmware] --> kernel[Linux<br>Kernel]
     subgraph Signed UKI Binary
-        subgraph Toybox Userland
+        subgraph Custom Initramfs
             init[Toybox<br>Init]
             init --> tinywl[tinywl<br>Compositor]
-            tinywl --> swayimg[swayimg<br>Image Display]
+            tinywl --> swayimg[swayimg<br>😸]
         end
         kernel --> init
     end
@@ -51,12 +51,19 @@ To build and test this, you need `podman` and `qemu`.
 
 Since this makes use of the QEMU [Host UEFI variable service](https://www.qemu.org/docs/master/devel/uefi-vars.html#host-uefi-variable-service), you will need at least QEMU 10 to make full use of this.
 
+Install dependencies (Fedora):
 ```sh
 sudo dnf install -y podman qemu
 ```
 
+Build all components:
 ```sh
-./build-all.sh
+./build-all
+```
+
+Build kernel, initramfs, and UKI:
+```sh
+./build-uki
 ```
 
 To build any of the individual components, enter the directory for that component and run the build script:
@@ -73,14 +80,15 @@ Current tests:
 
 | Test | Notes |
 |---|---|
-| test-kernel.sh | Test only kernel. |
-| test-kernel,initramfs.sh | Test kernel and initramfs (not packed into UKI). |
-| test-fw,kernel.sh | Test firmware and kernel. |
-| test-fw,kernel,initramfs.sh | Test firmware, kernel, and initramfs (not packed into UKI). |
-| test-fw,kernel,initramfs,uki.sh | Test firmware, kernel, and initramfs (packed into UKI). |
-| test-fw,kernel,initramfs,uki,sb-fail.sh | Test firmware, kernel, and initramfs (packed into UKI), with Microsoft Secure Boot keychain. It should **fail**. |
-| test-fw,kernel,initramfs,uki,sb-pass.sh | Test firmware, kernel, and initramfs (packed into UKI), with our custom Secure Boot keychain. It should **pass**. |
-| test-fw,kernel,initramfs,uki,sb-pass,virtio.sh | As above, but using a VirtIO GPU rather than the default `stdvga`. |
+| kernel | Test only kernel. |
+| kernel,serialonly | Test only kernel using only serial output (no VGA). |
+| kernel,initramfs | Test kernel and initramfs (not packed into UKI). |
+| fw,kernel | Test firmware and kernel. |
+| fw,kernel,initramfs | Test firmware, kernel, and initramfs (not packed into UKI). |
+| fw,kernel,initramfs,uki | Test firmware, kernel, and initramfs (packed into UKI). |
+| fw,kernel,initramfs,uki,sb-fail | Test firmware, kernel, and initramfs (packed into UKI), with Microsoft Secure Boot keychain. It should **fail**. |
+| fw,kernel,initramfs,uki,sb-pass | Test firmware, kernel, and initramfs (packed into UKI), with our custom Secure Boot keychain. It should **pass**. |
+| fw,kernel,initramfs,uki,sb-pass,virtio | As above, but using a VirtIO GPU rather than the default `stdvga`. |
 
 ## Future Plans
 * GitHub Actions to automatically build + release a signed UKI + UEFI Vars that people can run and test
