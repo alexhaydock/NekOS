@@ -25,4 +25,6 @@ qemu-system-x86_64 \
   -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_CUSTOM.json \
   -append "console=ttyS0" \
   -serial stdio \
-  -vga virtio
+  -vga none \
+  -device virtio-vga,xres=1280,yres=800 \
+  -display sdl

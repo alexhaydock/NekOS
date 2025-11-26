@@ -26,4 +26,5 @@ qemu-system-x86_64 \
   -drive if=pflash,format=raw,unit=0,file=../firmware/build/OVMF_CODE.fd,readonly=on \
   -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_MS.json \
   -append "console=ttyS0" \
-  -serial stdio
+  -serial stdio \
+  -display sdl

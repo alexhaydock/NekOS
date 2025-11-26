@@ -8,4 +8,5 @@ qemu-system-x86_64 \
   -machine q35,smm=off,vmport=off,accel=kvm \
   -kernel ../kernel/build/bzImage \
   -append "console=ttyS0" \
-  -serial stdio
+  -serial stdio \
+  -display sdl
