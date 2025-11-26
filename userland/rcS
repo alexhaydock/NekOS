@@ -1,10 +1,18 @@
 #!/bin/sh
 
+# DEBUG: Print our filesystem contents before we
+#        mount the virtual filesystems
+#find /
+
 # Mount some necessary FHS virtual filesystems
 mount -t sysfs /sys /sys
 mount -t proc /proc /proc
 mount -t devtmpfs /dev /dev
 mkdir /dev/shm
+
+# Insert the bochs kernel module so that we can actually
+# use the QEMU stdvga output
+modprobe bochs
 
 # We need to manually source .bashrc I think because we've
 # got bash acting as sh rather than bash

@@ -21,8 +21,13 @@ RUN make defconfig
 
 # Add some of our own config options to build some of the
 # experimental "toys"
+#
+# We particularly need modprobe since we're building with a
+# config that uses kernel modules and without it we can't
+# insert them
 RUN sed -i 's/^# CONFIG_GETTY.*/CONFIG_GETTY=y/' .config && \
     sed -i 's/^# CONFIG_INIT.*/CONFIG_INIT=y/' .config && \
+    sed -i 's/^# CONFIG_MODPROBE.*/CONFIG_MODPROBE=y/' .config && \
     sed -i 's/^# CONFIG_VI.*/CONFIG_VI=y/' .config
 
 # Build Toybox
@@ -176,6 +181,12 @@ RUN apk add cpio
 # Copy our Toybox build so far
 RUN mkdir -p /opt/toybox/fs
 COPY --from=wlroots /opt/toybox/fs /opt/toybox/fs
+
+# Copy in our kernel modules from our kernel build container
+# It's important that we've set CONFIG_MODULE_COMPRESS=n in our
+# kernel config here, because the implementation of modprobe in
+# Toybox doesn't seem to be built with gzip support
+COPY --from=localhost/kb /opt/mod/lib/modules /opt/toybox/fs/lib/modules
 
 # Enter our Toybox dir and pack our initramfs
 WORKDIR /opt/toybox/fs

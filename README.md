@@ -30,15 +30,15 @@ I'm hoping to use this to research Verified Boot, Confidential Compute, and "Bri
 * Kernel + userland packed into a Unified Kernel Image (UKI)
 * UKI signed with a custom Secure Boot keychain
 
-## Technical Architecture
+## Boot Sequence
 ```mermaid
 flowchart LR
     fw[EDK II OVMF<br>Firmware] --> kernel[Linux<br>Kernel]
     subgraph Signed UKI Binary
-        subgraph Toybox Userland
+        subgraph Custom Initramfs
             init[Toybox<br>Init]
             init --> tinywl[tinywl<br>Compositor]
-            tinywl --> swayimg[swayimg<br>Image Display]
+            tinywl --> swayimg[swayimg<br>😸]
         end
         kernel --> init
     end

@@ -4,10 +4,13 @@ set -euo pipefail
 # Build kernel
 podman build -t kb .
 
+# Run container (debug version)
+#podman run --rm -it kb
+
 # Run container to copy kernel into output dir
 podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp kb -fv /opt/bzImage /opt/out/bzImage
 
 # echo reminder
 echo ""
 echo "Kernel built"
-echo "Remember to rebuild the UKI if you made changes"
+echo "Remember to rebuild the initramfs and UKI if you made changes"

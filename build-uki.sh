@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+build_kernel() {
+    (
+        cd "$(pwd)/kernel"
+        ./build.sh
+    )
+}
+
+build_userland() {
+    (
+        cd "$(pwd)/userland"
+        ./build.sh
+    )
+}
+
+build_uki() {
+    (
+        cd "$(pwd)/uki"
+        ./build.sh
+    )  
+}
+
+time build_kernel | tee logs/build_kernel.log
+time build_userland | tee logs/build_userland.log
+time build_uki | tee logs/build_uki.log
