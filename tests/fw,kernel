@@ -5,15 +5,18 @@
 #   - Kernel build
 
 # Copy VARS to temp location
-cp -fv ../firmware/build/OVMF_VARS.fd /tmp/OVMF_VARS.fd
+cp -fv ../firmware/build/OVMF_VARS_INSECURE.json /tmp/OVMF_VARS_INSECURE.json
+
+# Configure options based on system arch
+. ./.archconfig
 
 # Run with OVMF CODE and VARS
-qemu-system-x86_64 \
+${qemu} \
   -m 2G \
-  -machine q35,smm=off,vmport=off,accel=kvm \
+  -cpu host \
+  -machine ${machine} \
   -kernel ../kernel/build/bzImage \
   -drive if=pflash,format=raw,unit=0,file=../firmware/build/OVMF_CODE.fd,readonly=on \
-  -drive if=pflash,format=raw,unit=1,file=/tmp/OVMF_VARS.fd \
-  -append "console=ttyS0" \
-  -serial stdio \
-  -display sdl
+  -device ${vartype},jsonfile=/tmp/OVMF_VARS_INSECURE.json \
+  -append "console=${console}" \
+  -serial mon:stdio

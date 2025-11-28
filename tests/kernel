@@ -3,10 +3,13 @@
 # This test validates:
 #   - Kernel build
 
-qemu-system-x86_64 \
+# Configure options based on system arch
+. ./.archconfig
+
+${qemu} \
   -m 2G \
-  -machine q35,smm=off,vmport=off,accel=kvm \
+  -cpu host \
+  -machine ${machine} \
   -kernel ../kernel/build/bzImage \
-  -append "console=ttyS0" \
-  -serial stdio \
-  -display sdl
+  -append "console=${console}" \
+  -serial mon:stdio

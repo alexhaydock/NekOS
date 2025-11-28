@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+
+# Discover arch
+arch="$(uname -m)"
+
+# Set QEMU options based on arch
+#
+# Note that I'm being a bit lazy here and assuming that the aarch64
+# options we set here are shorthand for "we are running a macOS host"
+case "$arch" in
+    x86_64 | amd64)
+        export console="ttyS0"
+        export display="sdl"
+        export machine="q35,smm=off,vmport=off,accel=kvm"
+        export qemu="qemu-system-x86_64"
+        export vartype="uefi-vars-x64"
+        export virtiogpu="virtio-gpu-pci"
+    ;;
+    aarch64 | arm64)
+        export console="ttyAMA0"
+        export display="cocoa"
+        export machine="virt,accel=hvf"
+        export qemu="qemu-system-aarch64"
+        export vartype="uefi-vars-sysbus"
+        export virtiogpu="virtio-gpu-pci"
+    ;;
+esac

@@ -34,6 +34,9 @@ WORKDIR /opt/linux
 #
 # Currently disabled since this config doesn't seem to include what we need
 # to set up a full graphical environment, even when applying our overlay below
+#
+# Remember when I do come back to this, I need to use `uname -m` to retain
+# Apple Silicon support
 #COPY --from=kerneldownloader /opt/aports/main/linux-lts/virt.x86_64.config /opt/linux/.config
 #RUN make olddefconfig
 
@@ -53,8 +56,19 @@ RUN mkdir -p /opt/mod/lib/modules && \
         INSTALL_MOD_PATH="/opt/mod" \
         INSTALL_MOD_STRIP=1
 
+# Copy whichever kernel file we actually built into /opt
+RUN arch="$(uname -m)" && \
+    case "$arch" in \
+    x86_64 | amd64) \
+      cp -fv /opt/linux/arch/x86/boot/bzImage /opt/bzImage \
+    ;; \
+    aarch64 | arm64) \
+      cp -fv /opt/linux/arch/arm64/boot/Image /opt/bzImage \
+    ;; \
+    esac
+
 # Final container that just contains our kernel and nothing more
 FROM docker.io/library/alpine:3.22
-COPY --from=kernelbuilder /opt/linux/arch/x86/boot/bzImage /opt/bzImage
+COPY --from=kernelbuilder /opt/bzImage /opt/bzImage
 COPY --from=kernelbuilder /opt/mod /opt/mod
 WORKDIR /opt

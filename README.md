@@ -29,6 +29,7 @@ I'm hoping to use this to research Verified Boot, Confidential Compute, and "Bri
 * Custom userland based on Toybox
 * Kernel + userland packed into a Unified Kernel Image (UKI)
 * UKI signed with a custom Secure Boot keychain
+* Support for running a macOS (Apple Silicon) host, including all the Secure Boot functionality
 
 ## Boot Sequence
 ```mermaid
@@ -54,6 +55,11 @@ Since this makes use of the QEMU [Host UEFI variable service](https://www.qemu.o
 Install dependencies (Fedora):
 ```sh
 sudo dnf install -y podman qemu
+```
+
+Install dependencies (macOS):
+```sh
+brew install podman qemu
 ```
 
 Build all components:
@@ -96,6 +102,7 @@ Current tests:
 * Secure Boot validation from inside OS
   * PCR signing validation from inside OS, using vTPM
 * Reproducible firmware build with ability to pre-compute SEV hashes, allowing for Confidential Compute in BYOF environments
+  * Like how AWS do it for [their EDK II build](https://github.com/aws/uefi), which uses Nix to guarantee reproducibility
 * More interesting stuff in the userland
   * Add another layer to the chain with a signed shim & systemd-boot?
 * ISO build process, for booting this on real hardware

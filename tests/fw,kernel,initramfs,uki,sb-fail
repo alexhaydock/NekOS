@@ -10,6 +10,9 @@
 # Copy Secure Boot VARS with Microsoft keys to temp location
 cp -fv ../firmware/build/OVMF_VARS_MS.json /tmp/OVMF_VARS_MS.json
 
+# Configure options based on system arch
+. ./.archconfig
+
 # Run with custom OVMF CODE and VARS store we built based
 # on the pre-populated one found in the uptream Fedora package
 # (we expect this to fail as our image isn't signed by a
@@ -19,12 +22,13 @@ cp -fv ../firmware/build/OVMF_VARS_MS.json /tmp/OVMF_VARS_MS.json
 # otherwise QEMU doesn't fully validate the Secure Boot
 # state (it flashes a warning that passing the kernel
 # directly is insecure)
-qemu-system-x86_64 \
+${qemu} \
   -m 2G \
-  -machine q35,smm=off,vmport=off,accel=kvm \
+  -cpu host \
+  -machine ${machine} \
   -kernel ../uki/build/uki.efi \
   -drive if=pflash,format=raw,unit=0,file=../firmware/build/OVMF_CODE.fd,readonly=on \
-  -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_MS.json \
-  -append "console=ttyS0" \
-  -serial stdio \
-  -display sdl
+  -device ${vartype},jsonfile=/tmp/OVMF_VARS_MS.json \
+  -append "console=${console}" \
+  -serial mon:stdio \
+  -display ${display}

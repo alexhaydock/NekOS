@@ -9,12 +9,16 @@
 # Copy empty insecure VARS to temp location
 cp -fv ../firmware/build/OVMF_VARS_INSECURE.json /tmp/OVMF_VARS_INSECURE.json
 
-qemu-system-x86_64 \
+# Configure options based on system arch
+. ./.archconfig
+
+${qemu} \
   -m 2G \
-  -machine q35,smm=off,vmport=off,accel=kvm \
+  -cpu host \
+  -machine ${machine} \
   -kernel ../uki/build/uki.efi \
   -drive if=pflash,format=raw,unit=0,file=../firmware/build/OVMF_CODE.fd,readonly=on \
-  -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_INSECURE.json \
-  -append "console=ttyS0" \
-  -serial stdio \
-  -display sdl
+  -device ${vartype},jsonfile=/tmp/OVMF_VARS_INSECURE.json \
+  -append "console=${console}" \
+  -serial mon:stdio \
+  -display ${display}

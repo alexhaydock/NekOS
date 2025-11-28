@@ -10,6 +10,9 @@
 # Copy Secure Boot VARS with our custom keys to temp location
 cp -fv ../firmware/build/OVMF_VARS_CUSTOM.json /tmp/OVMF_VARS_CUSTOM.json
 
+# Configure options based on system arch
+. ./.archconfig
+
 # Run with custom OVMF CODE and custom VARS which contain
 # our custom Secure Boot key signing chain
 #
@@ -17,14 +20,15 @@ cp -fv ../firmware/build/OVMF_VARS_CUSTOM.json /tmp/OVMF_VARS_CUSTOM.json
 # otherwise QEMU doesn't fully validate the Secure Boot
 # state (it flashes a warning that passing the kernel
 # directly is insecure)
-qemu-system-x86_64 \
+${qemu} \
   -m 2G \
-  -machine q35,smm=off,vmport=off,accel=kvm \
+  -cpu host \
+  -machine ${machine} \
   -kernel ../uki/build/uki.efi \
   -drive if=pflash,format=raw,unit=0,file=../firmware/build/OVMF_CODE.fd,readonly=on \
-  -device uefi-vars-x64,jsonfile=/tmp/OVMF_VARS_CUSTOM.json \
-  -append "console=ttyS0" \
-  -serial stdio \
+  -device ${vartype},jsonfile=/tmp/OVMF_VARS_CUSTOM.json \
+  -append "console=${console}" \
+  -serial mon:stdio \
   -vga none \
-  -device virtio-vga,xres=1280,yres=800 \
-  -display sdl
+  -device ${virtiogpu},xres=1280,yres=800 \
+  -display ${display}
