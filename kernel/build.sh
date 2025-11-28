@@ -8,7 +8,7 @@ podman build -t kb .
 #podman run --rm -it kb
 
 # Run container to copy kernel into output dir
-podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp kb -fv /opt/bzImage /opt/out/bzImage
+podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp kb -fv /opt/kernel /opt/out/kernel
 
 # echo reminder
 echo ""

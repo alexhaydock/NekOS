@@ -2,11 +2,9 @@
 # See build.sh for how we build this
 FROM localhost/tianodev as builder
 
-# Set a version to use
-ENV VERSION=202511
-
-# Check out edk2 upstream repository
-RUN git clone --branch edk2-stable$VERSION --depth 1 https://github.com/tianocore/edk2.git /opt/edk2
+# Check out edk2 upstream repository using latest release tag
+RUN EDKVER=$(curl -s https://api.github.com/repos/tianocore/edk2/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")') && \
+    git clone --branch ${EDKVER} --depth 1 https://github.com/tianocore/edk2.git /opt/edk2
 WORKDIR /opt/edk2
 RUN git submodule update --init --recursive --depth 1
 
@@ -59,11 +57,11 @@ RUN arch="$(uname -m)" && \
 RUN arch="$(uname -m)" && \
     case "$arch" in \
     x86_64 | amd64) \
-      cp -fv /opt/edk2/Build/OvmfX64/RELEASE_GCC5/FV/OVMF_CODE.fd /opt/OVMF_CODE.fd \
+      cp -fv /opt/edk2/Build/OvmfX64/RELEASE_GCC5/FV/OVMF_CODE.fd /opt/firmware.fd \
     ;; \
     aarch64 | arm64) \
-      dd if=/opt/edk2/Build/ArmVirtQemu-AArch64/RELEASE_GCC5/FV/QEMU_EFI.fd of=/opt/OVMF_CODE.fd conv=notrunc && \
-      truncate -s 64m /opt/OVMF_CODE.fd \
+      dd if=/opt/edk2/Build/ArmVirtQemu-AArch64/RELEASE_GCC5/FV/QEMU_EFI.fd of=/opt/firmware.fd conv=notrunc && \
+      truncate -s 64m /opt/firmware.fd \
     ;; \
     esac
 
@@ -93,8 +91,8 @@ RUN virt-fw-vars \
   --secure-boot
 
 # Final container that just contains our firmware and nothing more
-FROM docker.io/library/alpine:3.22
-COPY --from=builder /opt/OVMF_CODE.fd /opt/OVMF_CODE.fd
+FROM docker.io/library/alpine:edge
+COPY --from=builder /opt/firmware.fd /opt/firmware.fd
 COPY --from=builder /opt/OVMF_VARS_INSECURE.json /opt/OVMF_VARS_INSECURE.json
 COPY --from=builder /opt/OVMF_VARS_MS.json /opt/OVMF_VARS_MS.json
 COPY --from=builder /opt/OVMF_VARS_CUSTOM.json /opt/OVMF_VARS_CUSTOM.json

@@ -16,9 +16,9 @@ ${qemu} \
   -m 2G \
   -cpu host \
   -machine ${machine} \
-  -kernel ../kernel/build/bzImage \
+  -kernel ../kernel/build/kernel \
   -initrd ../userland/build/initramfs \
-  -drive if=pflash,format=raw,unit=0,file=../firmware/build/OVMF_CODE.fd,readonly=on \
+  -drive if=pflash,format=raw,unit=0,file=../firmware/build/firmware.fd,readonly=on \
   -device ${vartype},jsonfile=/tmp/OVMF_VARS_INSECURE.json \
   -append "console=${console}" \
   -serial mon:stdio \

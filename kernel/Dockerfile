@@ -1,5 +1,5 @@
 # Download and extract kernel tarball
-FROM docker.io/library/alpine:3.22 as kerneldownloader
+FROM docker.io/library/alpine:edge as kerneldownloader
 
 # Download the Alpine aports tree because we want to use
 # the upstream linux-virt config as our base, and we
@@ -15,7 +15,7 @@ RUN export KERNVER="$(grep ^pkgver /opt/aports/main/linux-lts/APKBUILD | cut -d'
     mv /opt/linux-${KERNVER} /opt/linux
 
 # Start kernel build container
-FROM docker.io/library/alpine:3.22 as kernelbuilder
+FROM docker.io/library/alpine:edge as kernelbuilder
 
 # Standard Alpine SDK
 RUN apk add alpine-sdk
@@ -60,15 +60,15 @@ RUN mkdir -p /opt/mod/lib/modules && \
 RUN arch="$(uname -m)" && \
     case "$arch" in \
     x86_64 | amd64) \
-      cp -fv /opt/linux/arch/x86/boot/bzImage /opt/bzImage \
+      cp -fv /opt/linux/arch/x86/boot/bzImage /opt/kernel \
     ;; \
     aarch64 | arm64) \
-      cp -fv /opt/linux/arch/arm64/boot/Image /opt/bzImage \
+      cp -fv /opt/linux/arch/arm64/boot/Image /opt/kernel \
     ;; \
     esac
 
 # Final container that just contains our kernel and nothing more
-FROM docker.io/library/alpine:3.22
-COPY --from=kernelbuilder /opt/bzImage /opt/bzImage
+FROM docker.io/library/alpine:edge
+COPY --from=kernelbuilder /opt/kernel /opt/kernel
 COPY --from=kernelbuilder /opt/mod /opt/mod
 WORKDIR /opt

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Copy kernel and initramfs into src/ directory
-cp -fv ../kernel/build/bzImage src/bzImage
+cp -fv ../kernel/build/kernel src/kernel
 cp -fv ../userland/build/initramfs src/initramfs
 
 # Copy Secure Boot keys from sbkeys build

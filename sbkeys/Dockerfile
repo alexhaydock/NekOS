@@ -1,4 +1,4 @@
-FROM docker.io/library/alpine:3.22
+FROM docker.io/library/alpine:edge
 RUN apk --no-cache add ukify openssl py3-cryptography rsync
 
 # Create key output dir

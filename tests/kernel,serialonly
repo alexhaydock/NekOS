@@ -10,6 +10,6 @@ ${qemu} \
   -m 2G \
   -cpu host \
   -machine ${machine} \
-  -kernel ../kernel/build/bzImage \
+  -kernel ../kernel/build/kernel \
   -append "console=${console}" \
   -nographic

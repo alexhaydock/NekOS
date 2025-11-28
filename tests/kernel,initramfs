@@ -11,7 +11,7 @@ ${qemu} \
   -m 2G \
   -cpu host \
   -machine ${machine} \
-  -kernel ../kernel/build/bzImage \
+  -kernel ../kernel/build/kernel \
   -initrd ../userland/build/initramfs \
   -append "console=${console}" \
   -serial mon:stdio \

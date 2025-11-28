@@ -1,8 +1,8 @@
-FROM docker.io/library/alpine:3.22
+FROM docker.io/library/alpine:edge
 
 # Don't forget to build the kernel and initramfs before
 # trying to combine them into a UKI
-COPY src/bzImage /opt/bzImage
+COPY src/kernel /opt/kernel
 COPY src/initramfs /opt/initramfs
 
 # Copy in our Secure Boot keys
@@ -17,7 +17,7 @@ RUN apk --no-cache add \
 # Build signed UKI
 RUN ukify build \
     --output "/opt/uki.efi" \
-    --linux "/opt/bzImage" \
+    --linux "/opt/kernel" \
     --initrd "/opt/initramfs" \
     --secureboot-private-key="/opt/keys/db-priv.pem" \
     --secureboot-certificate="/opt/keys/db-cert.pem" \
