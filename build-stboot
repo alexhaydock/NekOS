@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+build_kernel() {
+    (
+        cd "$(pwd)/kernel"
+        ./build.sh
+    )
+}
+
+build_userland() {
+    (
+        cd "$(pwd)/userland"
+        ./build.sh
+    )
+}
+
+build_stboot() {
+    (
+        cd "$(pwd)/stboot"
+        ./build.sh
+    )  
+}
+
+time build_kernel | tee logs/build_kernel.log
+time build_userland | tee logs/build_userland.log
+time build_stboot | tee logs/build_stboot.log

@@ -67,9 +67,14 @@ Build all components:
 ./build-all
 ```
 
-Build kernel, initramfs, and UKI:
+Build kernel, initramfs, and direct-booting UKI:
 ```sh
 ./build-uki
+```
+
+Build kernel, initramfs, and stboot-booting UKI:
+```sh
+./build-stboot
 ```
 
 To build any of the individual components, enter the directory for that component and run the build script:
@@ -91,22 +96,23 @@ Current tests:
 | kernel,initramfs | Test kernel and initramfs (not packed into UKI). |
 | fw,kernel | Test firmware and kernel. |
 | fw,kernel,initramfs | Test firmware, kernel, and initramfs (not packed into UKI). |
+| fw,kernel,initramfs,stboot | Test OS image booted via stboot UKI. |
 | fw,kernel,initramfs,uki | Test firmware, kernel, and initramfs (packed into UKI). |
 | fw,kernel,initramfs,uki,sb-fail | Test firmware, kernel, and initramfs (packed into UKI), with Microsoft Secure Boot keychain. It should **fail**. |
 | fw,kernel,initramfs,uki,sb-pass | Test firmware, kernel, and initramfs (packed into UKI), with our custom Secure Boot keychain. It should **pass**. |
 | fw,kernel,initramfs,uki,sb-pass,virtio | As above, but using a VirtIO GPU rather than the default `stdvga`. |
 
 ## Future Plans
-* GitHub Actions to automatically build + release a signed UKI + UEFI Vars that people can run and test
-* More validation / signing, including PCRs
-* Secure Boot validation from inside OS
-  * PCR signing validation from inside OS, using vTPM
+* Sign stboot UKI using Secure Boot keys, like existing direct-UKI boot
+  * Move stboot key generation into sbkeys build step
+  * Add tests to test full stboot flow with Secure Boot
+  * Sign stboot base UKI using a YubiKey as a HSM:
+    * https://docs.system-transparency.org/st-1.3.0/docs/how-to/secure-boot/sign-efi-applications/yubikey/
 * Reproducible firmware build with ability to pre-compute SEV hashes, allowing for Confidential Compute in BYOF environments
   * Like how AWS do it for [their EDK II build](https://github.com/aws/uefi), which uses Nix to guarantee reproducibility
-* More interesting stuff in the userland
-  * Add another layer to the chain with a signed shim & systemd-boot?
-* ISO build process, for booting this on real hardware
-* And maybe more fun stuff in the userland? Who knows...
+  * Add the SEV-SNP measurements into the build process using [sev-snp-measure](https://github.com/virtee/sev-snp-measure) or something similar.
+  * I want to add in `snpguest` to validate AMD SEV-SNP from inside the OS, and compare it to the firmware build above.
+* More cats!
 
 ## License
 Any code in this repo which is capable of being subject to copyright is licensed as per the LICENSE file in the root of this repository. This doesn't include the images of my cats.

@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+
+# This test validates:
+#   - OVMF firmware build
+#   - Kernel build
+#   - Initramfs build
+#   - UKI build
+
+# Copy empty insecure VARS to temp location
+cp -fv ../firmware/build/OVMF_VARS_INSECURE.json /tmp/OVMF_VARS_INSECURE.json
+
+# Configure options based on system arch
+. ./.archconfig
+
+# Start a webserver to host the NekOS images
+# (kill any existing ones we've still got hanging around)
+kill "$(pgrep -xf 'python3 -m http.server -d ../stboot/build')"
+(python3 -m http.server -d ../stboot/build)&
+
+${qemu} \
+  -m 2G \
+  -cpu host \
+  -machine ${machine} \
+  -kernel ../stboot/build/stboot.uki \
+  -drive if=pflash,format=raw,unit=0,file=../firmware/build/firmware.fd,readonly=on \
+  -device ${vartype},jsonfile=/tmp/OVMF_VARS_INSECURE.json \
+  -append "console=${console}" \
+  -serial mon:stdio \
+  -display ${display}
