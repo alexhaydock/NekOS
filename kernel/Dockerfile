@@ -8,23 +8,23 @@ FROM docker.io/library/alpine:edge as kerneldownloader
 RUN apk --no-cache add git
 RUN git clone --depth 1 https://git.alpinelinux.org/aports /opt/aports
 WORKDIR /opt
-RUN export KERNVER="$(grep ^pkgver /opt/aports/main/linux-lts/APKBUILD | cut -d'=' -f2)" && \
+RUN export KERNVER="$(grep '^pkgver' /opt/aports/main/linux-lts/APKBUILD | cut -d'=' -f2)" && \
     echo "Building Linux ${KERNVER}..." && \
-    wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNVER}.tar.xz -O /opt/kernel.tar.xz && \
+    wget --quiet "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNVER}.tar.xz" -O /opt/kernel.tar.xz && \
     tar xf /opt/kernel.tar.xz && \
-    mv /opt/linux-${KERNVER} /opt/linux
+    mv "/opt/linux-${KERNVER}" /opt/linux
 
 # Start kernel build container
 FROM docker.io/library/alpine:edge as kernelbuilder
 
 # Standard Alpine SDK
-RUN apk add alpine-sdk
+RUN apk --no-cache add alpine-sdk
 # makedepends from the linux-lts APKBUILD
-RUN apk add sed bc linux-headers linux-firmware-any openssl-dev mawk diffutils findutils zstd pahole python3 gcc
+RUN apk --no-cache add sed bc linux-headers linux-firmware-any openssl-dev mawk diffutils findutils zstd pahole python3 gcc
 # _depends_dev from the linux-lts APKBUILD
-RUN apk add perl gmp-dev mpc1-dev mpfr-dev elfutils-dev bash flex bison zstd
+RUN apk --no-cache add perl gmp-dev mpc1-dev mpfr-dev elfutils-dev bash flex bison zstd
 # Add bash to run the scripts shipped in the kernel's scripts/ dir
-RUN apk add bash
+RUN apk --no-cache add bash
 
 # Copy kernel sources from download container
 COPY --from=kerneldownloader /opt/linux/ /opt/linux/
@@ -48,7 +48,7 @@ COPY features.config /opt/linux/features.config
 RUN scripts/kconfig/merge_config.sh .config features.config
 
 # Build kernel
-RUN make -j$(nproc)
+RUN make -j"$(nproc)"
 
 # Install modules into directory
 RUN mkdir -p /opt/mod/lib/modules && \

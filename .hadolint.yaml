@@ -1,0 +1,8 @@
+---
+ignored:
+  - DL3007  # don't complain about our use of :latest
+  - DL3018  # apk version pinning
+  - DL3041  # dnf version pinning
+  - DL3059  # consecutive RUN instructions
+  - DL4006  # pipefail warning (we use too much Alpine /bin/sh for this)
+  - SC2155  # don't complain about declaring and assigning variables at the same time

@@ -1,19 +1,18 @@
 # Use the Tianocore upstream development container
 # See build.sh for how we build this
-FROM localhost/tianodev as builder
+FROM localhost/tianodev:latest as builder
 
 # Check out edk2 upstream repository using latest release tag
 RUN EDKVER=$(curl -s https://api.github.com/repos/tianocore/edk2/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")') && \
-    git clone --branch ${EDKVER} --depth 1 https://github.com/tianocore/edk2.git /opt/edk2
+    git clone --branch "${EDKVER}" --depth 1 https://github.com/tianocore/edk2.git /opt/edk2
 WORKDIR /opt/edk2
 RUN git submodule update --init --recursive --depth 1
 
 # Copy custom logo into the firmware build
 COPY logo.png /opt/logo.png
-RUN dnf install -y ImageMagick
-# Convert logo to a BMP with a black background and put
-# it into the right place
-RUN magick \
+RUN dnf install -y ImageMagick && \
+    dnf clean all && \
+    magick \
         /opt/logo.png \
         -background black \
         -alpha remove \
@@ -38,14 +37,14 @@ RUN arch="$(uname -m)" && \
     export WORKSPACE=/opt/edk2 && \
     export PACKAGES_PATH=/opt/edk2 && \
     export EDK_TOOLS_PATH=/opt/edk2/BaseTools/ && \
-    export PATH=/opt/edk2/BaseTools/BinWrappers/PosixLike/:$PATH && \
+    export PATH="/opt/edk2/BaseTools/BinWrappers/PosixLike/:$PATH" && \
     unset MAKEFLAGS && \
     bash -c ". edksetup.sh" && \
     make -C BaseTools && \
     build -b RELEASE \
-        -a ${TARGET_ARCH} \
+        -a "${TARGET_ARCH}" \
         -t GCC5 \
-        -p ${PLATFORM} \
+        -p "${PLATFORM}" \
         -n 2 \
         -D SECURE_BOOT_ENABLE=TRUE \
         -D TPM2_ENABLE=TRUE \
@@ -66,7 +65,8 @@ RUN arch="$(uname -m)" && \
     esac
 
 # Install virt-fw-vars to create some JSON vars stores
-RUN dnf install -y python3-virt-firmware edk2-ovmf
+RUN dnf install -y python3-virt-firmware edk2-ovmf && \
+    dnf clean all
 # Create a blank JSON VARS store so we have something to
 # work with if we don't want Secure Boot validation active
 RUN virt-fw-vars \
@@ -84,8 +84,8 @@ RUN virt-fw-vars \
 COPY keys/ /opt/keys
 RUN virt-fw-vars \
   --output-json /opt/OVMF_VARS_CUSTOM.json \
-  --set-pk-cert $(uuidgen) /opt/keys/pk-cert.pem \
-  --add-db-cert $(uuidgen) /opt/keys/db-cert.pem \
+  --set-pk-cert "$(uuidgen)" /opt/keys/pk-cert.pem \
+  --add-db-cert "$(uuidgen)" /opt/keys/db-cert.pem \
   --microsoft-db none \
   --microsoft-kek none \
   --secure-boot

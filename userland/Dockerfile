@@ -31,7 +31,7 @@ RUN sed -i 's/^# CONFIG_GETTY.*/CONFIG_GETTY=y/' .config && \
     sed -i 's/^# CONFIG_VI.*/CONFIG_VI=y/' .config
 
 # Build Toybox
-RUN make -j$(nproc)
+RUN make -j"$(nproc)"
 
 # Create output dir
 RUN mkdir -p /opt/toybox/fs
@@ -57,7 +57,7 @@ RUN chmod +x /opt/toybox/fs/etc/init.d/rcS
 FROM docker.io/library/alpine:edge as dynamiclibs
 
 # Install any deps we want to copy into our destination environment
-RUN apk add bash
+RUN apk --no-cache add bash
 
 # Copy our Toybox build so far
 RUN mkdir -p /opt/toybox/fs
@@ -73,7 +73,9 @@ RUN mkdir -p /opt/toybox/fs/lib /opt/toybox/fs/usr/lib
 # Note we copy it as /bin/sh as a cheap way of setting it as the
 # default shell
 RUN cp /bin/bash bin/sh
-RUN for i in $(ldd /opt/toybox/fs/bin/sh | grep '=>' | awk '{print $3}'); do cp -fv ${i} /opt/toybox/fs${i}; done
+RUN for i in $(ldd /opt/toybox/fs/bin/sh | grep '=>' | awk '{print $3}'); do \
+      cp -fv "${i}" "/opt/toybox/fs${i}"; \
+    done
 
 # Container to build wlroots as our graphical compositor
 FROM docker.io/library/alpine:edge as wlroots
@@ -89,12 +91,12 @@ RUN apk --no-cache add wlroots && \
 
 # Download the source for the version of wlroots that matches what we've got from APK
 WORKDIR /opt
-RUN wget \
+RUN wget --quiet \
       "https://gitlab.freedesktop.org/wlroots/wlroots/-/archive/$(cat /opt/wlver)/wlroots-$(cat /opt/wlver).tar.gz" \
       -O /opt/wlroots.tar.gz && \
     tar xf /opt/wlroots.tar.gz && \
     rm -v /opt/wlroots.tar.gz && \
-    mv -v /opt/wlroots-$(cat /opt/wlver) /opt/wlroots
+    mv -v "/opt/wlroots-$(cat /opt/wlver)" /opt/wlroots
 
 # Build wlroots
 # Based on: https://gitlab.freedesktop.org/wlroots/wlroots/-/blob/abf80b529e48823e21215a6ccc4653e2c2a4a565/.builds/alpine.yml
@@ -140,7 +142,9 @@ RUN cp -fv /opt/wlroots/tinywl/tinywl /opt/toybox/fs/bin/
 #
 # This is a little cheat where we use ldd and loop over the libs
 # and copy them from our Alpine host
-RUN for i in $(ldd /opt/toybox/fs/bin/tinywl | grep '=>' | awk '{print $3}'); do cp -fv ${i} /opt/toybox/fs${i}; done
+RUN for i in $(ldd /opt/toybox/fs/bin/tinywl | grep '=>' | awk '{print $3}'); do \
+      cp -fv "${i}" "/opt/toybox/fs${i}"; \
+    done
 
 # Add seatd seat management daemon which is required by wlroots
 # to run the compositor
@@ -152,9 +156,16 @@ WORKDIR /opt/toybox/fs
 RUN apk --no-cache fetch seatd && \
     tar xf seatd*.apk && \
     rm seatd*.apk
+RUN apk --no-cache add seatd && \
+    for i in $(ldd /opt/toybox/fs/usr/bin/seatd | grep '=>' | awk '{print $3}'); do \
+      cp -fv "${i}" "/opt/toybox/fs${i}"; \
+    done
 
 # Add libudev-zero so we don't need to deal with setting up and
 # running the libudev daemon
+#
+# This package only provides libs, so we don't need to worry
+# about doing any ldd magic here
 RUN apk --no-cache fetch libudev-zero && \
     tar xf libudev-zero*.apk && \
     rm libudev-zero*.apk
@@ -164,21 +175,28 @@ RUN apk --no-cache fetch libudev-zero && \
 RUN apk --no-cache fetch nyancat && \
     tar xf nyancat*.apk && \
     rm nyancat*.apk
+RUN apk --no-cache add nyancat && \
+    for i in $(ldd /opt/toybox/fs/usr/bin/nyancat | grep '=>' | awk '{print $3}'); do \
+      cp -fv "${i}" "/opt/toybox/fs${i}"; \
+    done
 
 # Add mokutil for testing Secure Boot is working
 RUN apk --no-cache fetch mokutil && \
     tar xf mokutil*.apk && \
     rm mokutil*.apk
+RUN apk --no-cache add mokutil && \
+    for i in $(ldd /opt/toybox/fs/usr/bin/mokutil | grep '=>' | awk '{print $3}'); do \
+      cp -fv "${i}" "/opt/toybox/fs${i}"; \
+    done
 
-# Add swayimg as our graphical image viewer, along with the required libs
+# Add swayimg as our graphical image viewer
 RUN apk --no-cache fetch swayimg && \
     tar xf swayimg*.apk && \
     rm swayimg*.apk
-
-# Install swayimg into the container so the dependencies get resolved
-# and we have all the dynamic libs needed to copy into the initramfs
-RUN apk --no-cache add swayimg
-RUN for i in $(ldd /opt/toybox/fs/usr/bin/swayimg | grep '=>' | awk '{print $3}'); do cp -fv ${i} /opt/toybox/fs${i}; done
+RUN apk --no-cache add swayimg && \
+    for i in $(ldd /opt/toybox/fs/usr/bin/swayimg | grep '=>' | awk '{print $3}'); do \
+      cp -fv "${i}" "/opt/toybox/fs${i}"; \
+    done
 
 # Add some images for viewing with swayimg
 COPY cats/ /opt/toybox/fs/opt/cats/
@@ -195,7 +213,7 @@ RUN cp -rfv /usr/share/X11/ /opt/toybox/fs/usr/share/X11/
 FROM docker.io/library/alpine:edge as initramfs
 
 # Install deps for initramfs building
-RUN apk add cpio
+RUN apk --no-cache add cpio
 
 # Copy our Toybox build so far
 RUN mkdir -p /opt/toybox/fs
@@ -205,13 +223,13 @@ COPY --from=wlroots /opt/toybox/fs /opt/toybox/fs
 # It's important that we've set CONFIG_MODULE_COMPRESS=n in our
 # kernel config here, because the implementation of modprobe in
 # Toybox doesn't seem to be built with gzip support
-COPY --from=localhost/kb /opt/mod/lib/modules /opt/toybox/fs/lib/modules
+COPY --from=localhost/kb:latest /opt/mod/lib/modules /opt/toybox/fs/lib/modules
 
 # Enter our Toybox dir and pack our initramfs
 WORKDIR /opt/toybox/fs
 RUN apk --no-cache add findutils && \
-    find | cpio -o -H newc > /opt/initramfs.cpio && \
-    find -type f -printf '%s %p\n' | sort -nr > /opt/initramfs.txt
+    find . | cpio -o -H newc > /opt/initramfs.cpio && \
+    find . -type f -printf '%s %p\n' | sort -nr > /opt/initramfs.txt
 
 # Final container that just contains our initramfs and nothing more
 FROM docker.io/library/alpine:edge
