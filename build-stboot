@@ -22,6 +22,6 @@ build_stboot() {
     )  
 }
 
-time build_kernel | tee logs/build_kernel.log
+time build_kernel   | tee logs/build_kernel.log
 time build_userland | tee logs/build_userland.log
-time build_stboot | tee logs/build_stboot.log
+time build_stboot   | tee logs/build_stboot.log

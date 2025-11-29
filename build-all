@@ -36,8 +36,16 @@ build_uki() {
     )  
 }
 
+build_stboot() {
+    (
+        cd "$(pwd)/stboot"
+        ./build.sh
+    )  
+}
+
 time build_sbkeys   | tee logs/build_sbkeys.log
 time build_firmware | tee logs/build_firmware.log
 time build_kernel   | tee logs/build_kernel.log
 time build_userland | tee logs/build_userland.log
 time build_uki      | tee logs/build_uki.log
+time build_stboot   | tee logs/build_stboot.log
