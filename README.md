@@ -31,12 +31,39 @@ I'm hoping to use this to research Verified Boot, Confidential Compute, and "Bri
 * UKI signed with a custom Secure Boot keychain
 * Support for running a macOS (Apple Silicon) host, including all the Secure Boot functionality
 
-## Boot Sequence
+## Boot Sequence (Direct UKI boot)
+In the direct-boot flow, the build processes in this repo produce a NekOS UKI, signed for UEFI Secure Boot.
+
 ```mermaid
 flowchart LR
-    fw[EDK II OVMF<br>Firmware] --> kernel[Linux<br>Kernel]
-    subgraph Signed UKI Binary
+    fw[EDK II OVMF<br>Firmware] --> kernel
+    kernel[NekOS<br>Linux<br>Kernel]
+    subgraph Secure-Boot-signed UKI
         subgraph Custom Initramfs
+            init[Toybox<br>Init]
+            init --> tinywl[tinywl<br>Compositor]
+            tinywl --> swayimg[swayimg<br>😸]
+        end
+        kernel --> init
+    end
+```
+
+## Boot Sequence (stboot)
+In the stboot flow, the build processes in this repo produce a stboot UKI, which contains a [stboot kernel](https://git.glasklar.is/system-transparency/core/stimages/-/tree/main/contrib/stboot) and public key to validate the next stage of the boot.
+
+The second stage of the stboot flow involves fetching the NekOS ZIP package (similar to a UKI since it's just our NekOS kernel and initramfs) over the network, validating it, and then `kexec`-ing into the NekOS environment.
+
+There are some limitations of this flow - notably that `build-stboot` doesn't seem to support building `aarch64` stboot environments yet, so I'll explore it more in future.
+
+```mermaid
+flowchart LR
+    fw[EDK II OVMF<br>Firmware] --> sbkern
+    subgraph stboot UKI
+        sbkern[stboot<br>Linux<br>Kernel]
+    end
+    sbkern --Fetched<br>via<br>HTTPS--> kernel[NekOS<br>Linux<br>Kernel]
+    subgraph stboot-signed ZIP
+        subgraph Custom Initramfs 
             init[Toybox<br>Init]
             init --> tinywl[tinywl<br>Compositor]
             tinywl --> swayimg[swayimg<br>😸]
@@ -67,12 +94,12 @@ Build all components:
 ./build-all
 ```
 
-Build kernel, initramfs, and direct-booting UKI:
+Build just kernel, initramfs, and direct-booting UKI:
 ```sh
 ./build-uki
 ```
 
-Build kernel, initramfs, and stboot-booting UKI:
+Build just kernel, initramfs, and stboot-booting UKI:
 ```sh
 ./build-stboot
 ```
