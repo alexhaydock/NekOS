@@ -1,5 +1,5 @@
 # Download and extract kernel tarball
-FROM docker.io/library/alpine:edge as kerneldownloader
+FROM docker.io/library/alpine:3.23 as kerneldownloader
 
 # Download the Alpine aports tree because we want to use
 # the upstream linux-virt config as our base, and we
@@ -8,14 +8,19 @@ FROM docker.io/library/alpine:edge as kerneldownloader
 RUN apk --no-cache add git
 RUN git clone --depth 1 https://git.alpinelinux.org/aports /opt/aports
 WORKDIR /opt
-RUN export KERNVER="$(grep '^pkgver' /opt/aports/main/linux-lts/APKBUILD | cut -d'=' -f2)" && \
+# If the kernel version ends in .0 (i.e. just-released LTS)
+# then we truncate it to remove the trailing .0 as that
+# doesn't appear in the upstream URL used by kernel.org
+RUN set -x && \
+    export KERNVER="$(grep '^pkgver' /opt/aports/main/linux-lts/APKBUILD | cut -d'=' -f2)" && \
+    case $KERNVER in *.0) KERNVER=${KERNVER%??} ;; esac && \
     echo "Building Linux ${KERNVER}..." && \
     wget --quiet "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNVER}.tar.xz" -O /opt/kernel.tar.xz && \
     tar xf /opt/kernel.tar.xz && \
     mv "/opt/linux-${KERNVER}" /opt/linux
 
 # Start kernel build container
-FROM docker.io/library/alpine:edge as kernelbuilder
+FROM docker.io/library/alpine:3.23 as kernelbuilder
 
 # Standard Alpine SDK
 RUN apk --no-cache add alpine-sdk
@@ -68,7 +73,7 @@ RUN arch="$(uname -m)" && \
     esac
 
 # Final container that just contains our kernel and nothing more
-FROM docker.io/library/alpine:edge
+FROM docker.io/library/alpine:3.23
 COPY --from=kernelbuilder /opt/kernel /opt/kernel
 COPY --from=kernelbuilder /opt/mod /opt/mod
 WORKDIR /opt

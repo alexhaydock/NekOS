@@ -1,8 +1,8 @@
-FROM docker.io/library/alpine:edge
+# Generate UEFI Secure Boot signing keys
+FROM docker.io/library/alpine:3.23 as sbkeys
 RUN apk --no-cache add \
     openssl \
     py3-cryptography \
-    rsync \
     ukify
 
 # Create key output dir
@@ -24,3 +24,24 @@ RUN openssl req -newkey rsa:4096 \
     -new -x509 -sha256 -days 3650 \
     -subj "/CN=NekOS Secure Boot PK/" \
     -out /opt/keys/pk-cert.pem
+
+# Generate stboot signing keys
+FROM docker.io/library/golang:alpine as stbootkeys
+
+# Install stmgr
+RUN go install system-transparency.org/stmgr@v0.6.6
+
+# Generate new signing keys here
+RUN mkdir /opt/keys
+WORKDIR /opt/keys
+RUN stmgr keygen certificate --isCA && \
+    stmgr keygen certificate \
+    --rootCert rootcert.pem \
+    --rootKey rootkey.pem
+
+# Final container that just contains our keys
+FROM docker.io/library/alpine:3.23
+RUN apk --no-cache add rsync
+COPY --from=sbkeys /opt/keys /opt/sbkeys
+COPY --from=stbootkeys /opt/keys /opt/stbootkeys
+WORKDIR /opt

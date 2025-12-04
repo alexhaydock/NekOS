@@ -5,8 +5,8 @@ set -euo pipefail
 cp -fv ../kernel/build/kernel src/kernel
 cp -fv ../userland/build/initramfs src/initramfs
 
-# Copy Secure Boot keys from sbkeys build
-cp -fv ../sbkeys/keys/* keys/
+# Copy Secure Boot keys from keygen build
+cp -fv ../keygen/keys/* keys/
 
 # Build UKI
 podman build -t uki .

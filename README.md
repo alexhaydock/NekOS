@@ -128,18 +128,21 @@ Current tests:
 | fw,kernel,initramfs,uki,sb-fail | Test firmware, kernel, and initramfs (packed into UKI), with Microsoft Secure Boot keychain. It should **fail**. |
 | fw,kernel,initramfs,uki,sb-pass | Test firmware, kernel, and initramfs (packed into UKI), with our custom Secure Boot keychain. It should **pass**. |
 | fw,kernel,initramfs,uki,sb-pass,virtio | As above, but using a VirtIO GPU rather than the default `stdvga`. |
+| microvm,kernel,initramfs,serialonly | Run the kernel & initramfs as a MicroVM. We only expect text output here. |
 
 ## Future Plans
 * Sign stboot UKI using Secure Boot keys, like existing direct-UKI boot
-  * Move stboot key generation into sbkeys build step
+  * Move stboot key generation into keygen build step
   * Add tests to test full stboot flow with Secure Boot
-  * Sign stboot base UKI using a YubiKey as a HSM:
+  * Consider signing UKIs for Secure Boot using a YubiKey as a HSM:
     * https://docs.system-transparency.org/st-1.3.0/docs/how-to/secure-boot/sign-efi-applications/yubikey/
 * Reproducible firmware build with ability to pre-compute SEV hashes, allowing for Confidential Compute in BYOF environments
   * Like how AWS do it for [their EDK II build](https://github.com/aws/uefi), which uses Nix to guarantee reproducibility
   * Add the SEV-SNP measurements into the build process using [sev-snp-measure](https://github.com/virtee/sev-snp-measure) or something similar.
   * I want to add in `snpguest` to validate AMD SEV-SNP from inside the OS, and compare it to the firmware build above.
-* More cats!
+* Move the whole build system to Nix rather than Dockerfiles (if that allows for better reproducibility).
+  * See AWS's UEFI firmware build [here](https://github.com/aws/uefi/tree/main).
+* Add more cats!
 
 ## License
 Any code in this repo which is capable of being subject to copyright is licensed as per the LICENSE file in the root of this repository. This doesn't include the images of my cats.

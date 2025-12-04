@@ -16,9 +16,6 @@ RUN apk --no-cache add \
 COPY src/kernel /opt/kernel
 COPY src/initramfs /opt/initramfs
 
-# Copy in our Secure Boot keys
-COPY keys/ /opt/keys
-
 # Install stmgr
 RUN go install system-transparency.org/stmgr@v0.6.6
 
@@ -30,14 +27,14 @@ RUN git clone \
     https://git.glasklar.is/system-transparency/core/stimages.git \
     /opt/stimages
 
-# WIP: Generate new signing keys here (move to sbkeys step)
 # Import our signing keys
-RUN mkdir keys
-WORKDIR /opt/stimages/keys
-RUN stmgr keygen certificate --isCA && \
-    stmgr keygen certificate \
-    --rootCert rootcert.pem \
-    --rootKey rootkey.pem
+#
+# This imports both the Secure Boot and stboot keys
+# which is important since we need to embed our stboot
+# pubkey into the stboot UKI, but we also want to sign
+# the resulting UKI with the Secure Boot keys so we
+# can validate the boot chain.
+COPY keys/ /opt/stimages/keys
 
 # Build stboot UKI, embedding the public key that
 # we're going to sign our OS package with, and the
@@ -63,7 +60,7 @@ RUN stmgr ospkg sign \
     --ospkg nekos
 
 # Final container that just contains our stboot UKI, OS image, and JSON manifest
-FROM docker.io/library/alpine:edge
+FROM docker.io/library/alpine:3.23
 COPY --from=stbootuki /opt/stimages/stboot.uki /opt/stboot.uki
 COPY --from=stbootuki /opt/stimages/nekos.json /opt/nekos.json
 COPY --from=stbootuki /opt/stimages/nekos.zip /opt/nekos.zip

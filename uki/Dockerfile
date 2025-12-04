@@ -1,4 +1,4 @@
-FROM docker.io/library/alpine:edge
+FROM docker.io/library/alpine:3.23
 
 # Add systemd-ukify and deps
 RUN apk --no-cache add \

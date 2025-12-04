@@ -1,0 +1,28 @@
+#!/usr/bin/env sh
+
+# EXPERIMENTAL
+#
+# This setup boots a MicroVM which does not support graphical
+# output, custom firmware, Secure Boot, or booting UKIs (BIOS is used).
+#
+# This setup should still produce dmesg-style debug output
+# to a serial console and the OS image should boot correctly.
+#
+# See: https://www.qemu.org/docs/master/system/i386/microvm.html
+
+# This test validates:
+#   - Kernel build
+#   - Initramfs build
+#   - MicroVM boot
+
+# Configure options based on system arch
+. ./.archconfig
+
+${qemu} \
+  -m 2G \
+  -machine microvm \
+  -kernel ../kernel/build/kernel \
+  -initrd ../userland/build/initramfs \
+  -append "earlyprintk=${console} console=${console} reboot=t" \
+  -serial mon:stdio \
+  -nodefaults -no-user-config -nographic

@@ -1,5 +1,5 @@
 # Container to build Toybox
-FROM docker.io/library/alpine:edge as toybuild
+FROM docker.io/library/alpine:3.23 as toybuild
 
 # See: https://github.com/tianon/dockerfiles/blob/master/toybox/Dockerfile
 RUN apk --no-cache add \
@@ -54,7 +54,7 @@ RUN chmod +x /opt/toybox/fs/etc/init.d/rcS
 
 # Container to cheat a bit and copy some pre-built Alpine assets
 # and dynamic libraries into the container
-FROM docker.io/library/alpine:edge as dynamiclibs
+FROM docker.io/library/alpine:3.23 as dynamiclibs
 
 # Install any deps we want to copy into our destination environment
 RUN apk --no-cache add bash
@@ -78,7 +78,7 @@ RUN for i in $(ldd /opt/toybox/fs/bin/sh | grep '=>' | awk '{print $3}'); do \
     done
 
 # Container to build wlroots as our graphical compositor
-FROM docker.io/library/alpine:edge as wlroots
+FROM docker.io/library/alpine:3.23 as wlroots
 
 # Copy our Toybox build so far
 RUN mkdir -p /opt/toybox/fs
@@ -210,7 +210,7 @@ RUN chmod +x /opt/toybox/fs/.bashrc
 RUN cp -rfv /usr/share/X11/ /opt/toybox/fs/usr/share/X11/
 
 # Container to build our filesystem into an initramfs
-FROM docker.io/library/alpine:edge as initramfs
+FROM docker.io/library/alpine:3.23 as initramfs
 
 # Install deps for initramfs building
 RUN apk --no-cache add cpio
@@ -232,7 +232,7 @@ RUN apk --no-cache add findutils && \
     find . -type f -printf '%s %p\n' | sort -nr > /opt/initramfs.txt
 
 # Final container that just contains our initramfs and nothing more
-FROM docker.io/library/alpine:edge
+FROM docker.io/library/alpine:3.23
 COPY --from=initramfs /opt/initramfs.cpio /opt/initramfs.cpio
 COPY --from=initramfs /opt/initramfs.txt /opt/initramfs.txt
 WORKDIR /opt

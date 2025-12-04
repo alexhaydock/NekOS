@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Copy Secure Boot keys from sbkeys build
-cp -fv ../sbkeys/keys/* keys/
+# Copy Secure Boot keys from keygen build
+cp -fv ../keygen/keys/* keys/
 
 # Download the upstream Tianocore build container Dockerfile
 # We do this because they only build and push x86_64 versions upstream,

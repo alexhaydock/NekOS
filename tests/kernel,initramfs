@@ -13,6 +13,6 @@ ${qemu} \
   -machine ${machine} \
   -kernel ../kernel/build/kernel \
   -initrd ../userland/build/initramfs \
-  -append "console=${console}" \
+  -append "earlyprintk=${console} console=${console}" \
   -serial mon:stdio \
   -display ${display}

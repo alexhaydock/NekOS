@@ -11,5 +11,5 @@ ${qemu} \
   -cpu host \
   -machine ${machine} \
   -kernel ../kernel/build/kernel \
-  -append "console=${console}" \
+  -append "earlyprintk=${console} console=${console}" \
   -nographic
