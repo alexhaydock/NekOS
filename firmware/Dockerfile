@@ -91,7 +91,7 @@ RUN virt-fw-vars \
   --secure-boot
 
 # Final container that just contains our firmware and nothing more
-FROM docker.io/library/alpine:3.23
+FROM docker.io/library/alpine:3.23 as final
 COPY --from=builder /opt/firmware.fd /opt/firmware.fd
 COPY --from=builder /opt/OVMF_VARS_INSECURE.json /opt/OVMF_VARS_INSECURE.json
 COPY --from=builder /opt/OVMF_VARS_MS.json /opt/OVMF_VARS_MS.json

@@ -60,7 +60,7 @@ RUN stmgr ospkg sign \
     --ospkg nekos
 
 # Final container that just contains our stboot UKI, OS image, and JSON manifest
-FROM docker.io/library/alpine:3.23
+FROM docker.io/library/alpine:3.23 as final
 COPY --from=stbootuki /opt/stimages/stboot.uki /opt/stboot.uki
 COPY --from=stbootuki /opt/stimages/nekos.json /opt/nekos.json
 COPY --from=stbootuki /opt/stimages/nekos.zip /opt/nekos.zip

@@ -9,7 +9,7 @@ cp -fv ../userland/build/initramfs src/initramfs
 cp -fv ../keygen/keys/* keys/
 
 # Build UKI
-podman build -t uki .
+podman build --target final -t uki .
 
 # Run container (debug version)
 #podman run --rm -it uki

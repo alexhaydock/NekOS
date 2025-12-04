@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build Toybox userland
-podman build -t ul .
+podman build --target final -t ul .
 
 # Run container (debug version)
 #podman run --rm -it ul

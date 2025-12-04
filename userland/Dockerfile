@@ -232,7 +232,7 @@ RUN apk --no-cache add findutils && \
     find . -type f -printf '%s %p\n' | sort -nr > /opt/initramfs.txt
 
 # Final container that just contains our initramfs and nothing more
-FROM docker.io/library/alpine:3.23
+FROM docker.io/library/alpine:3.23 as final
 COPY --from=initramfs /opt/initramfs.cpio /opt/initramfs.cpio
 COPY --from=initramfs /opt/initramfs.txt /opt/initramfs.txt
 WORKDIR /opt

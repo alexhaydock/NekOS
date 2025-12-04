@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build Secure Boot keys
-podman build -t keygen .
+podman build --target final -t keygen .
 
 # Run container to copy Secure Boot and stboot keys into
 # keys/ but only if they don't already exist so that we

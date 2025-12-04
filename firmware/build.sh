@@ -18,7 +18,7 @@ sed -i.bak '/PowerShell/ {/x86_64/d;}' Dockerfile-buildenv
 podman build -f Dockerfile-buildenv --target build -t tianodev .
 
 # Build OVMF firmware
-podman build -t ovmf .
+podman build --target final -t ovmf .
 
 # Run container (debug version)
 #podman run --rm -it --entrypoint bash ovmf

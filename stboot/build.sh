@@ -13,7 +13,7 @@ cp -fv ../keygen/keys/* keys/
 #       EFI code and fails on aarch64
 if [ "$(uname -m)" == "x86_64" ]; then
     # Build System Transparency bootloader and image
-    podman build -t stboot .
+    podman build --target final -t stboot .
 
     # Run container to copy stboot UKI, OS image, and
     # JSON manifest  into output dir

@@ -73,7 +73,7 @@ RUN arch="$(uname -m)" && \
     esac
 
 # Final container that just contains our kernel and nothing more
-FROM docker.io/library/alpine:3.23
+FROM docker.io/library/alpine:3.23 as final
 COPY --from=kernelbuilder /opt/kernel /opt/kernel
 COPY --from=kernelbuilder /opt/mod /opt/mod
 WORKDIR /opt

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build kernel
-podman build -t kb .
+podman build --target final -t kb .
 
 # Run container (debug version)
 #podman run --rm -it kb

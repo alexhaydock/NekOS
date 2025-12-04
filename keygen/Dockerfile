@@ -40,7 +40,7 @@ RUN stmgr keygen certificate --isCA && \
     --rootKey rootkey.pem
 
 # Final container that just contains our keys
-FROM docker.io/library/alpine:3.23
+FROM docker.io/library/alpine:3.23 as final
 RUN apk --no-cache add rsync
 COPY --from=sbkeys /opt/keys /opt/sbkeys
 COPY --from=stbootkeys /opt/keys /opt/stbootkeys
