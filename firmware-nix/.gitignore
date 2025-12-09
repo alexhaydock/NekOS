@@ -1,1 +1,3 @@
-result/
+# No trailing slash as Nix generates these
+# as symlinks
+result
