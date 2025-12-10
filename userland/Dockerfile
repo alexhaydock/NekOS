@@ -71,9 +71,9 @@ RUN mkdir -p \
 # do that for us
 RUN make install
 
-# Add our init script into /etc/init.d
-COPY rcS /opt/userland/etc/init.d/rcS
-RUN chmod +x /opt/userland/etc/init.d/rcS
+# Add our init script
+COPY init /opt/userland/init
+RUN chmod +x /opt/userland/init
 
 # Container to build wlroots as our graphical compositor
 FROM docker.io/library/alpine:3.23 as wlroots
@@ -223,21 +223,16 @@ RUN mkdir -p /opt/userland
 COPY --from=wlroots /opt/userland /opt/userland
 
 # Copy in our kernel modules from our kernel build container
-# It's important that we've set CONFIG_MODULE_COMPRESS=n in our
-# kernel config here, because the implementation of modprobe in
-# Toybox doesn't seem to be built with gzip support
-#
-# TODO: May be outdated as we're using BusyBox now
 COPY --from=localhost/kb:latest /opt/mod/lib/modules /opt/userland/lib/modules
 
-# Enter our BusyBox dir and pack our initramfs
+# Enter our BusyBox dir and pack our compressed initramfs
 WORKDIR /opt/userland
 RUN apk --no-cache add findutils && \
-    find . | cpio -o -H newc > /opt/initramfs.cpio && \
+    find . -print0 | cpio --null -o --format=newc | gzip -9 > ../initramfs && \
     find . -type f -printf '%s %p\n' | sort -nr > /opt/initramfs.txt
 
 # Final container that just contains our initramfs and nothing more
 FROM docker.io/library/alpine:3.23 as final
-COPY --from=initramfs /opt/initramfs.cpio /opt/initramfs.cpio
+COPY --from=initramfs /opt/initramfs /opt/initramfs
 COPY --from=initramfs /opt/initramfs.txt /opt/initramfs.txt
 WORKDIR /opt

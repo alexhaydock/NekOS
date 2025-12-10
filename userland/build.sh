@@ -8,7 +8,7 @@ podman build --target final -t ul .
 #podman run --rm -it ul
 
 # Run container
-podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp ul -fv /opt/initramfs.cpio /opt/out/initramfs
+podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp ul -fv /opt/initramfs /opt/out/initramfs
 podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp ul -fv /opt/initramfs.txt /opt/out/initramfs_filelist.txt
 
 # echo reminder
