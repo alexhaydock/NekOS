@@ -58,10 +58,10 @@ There are some limitations of this flow - notably that `build-stboot` doesn't se
 ```mermaid
 flowchart LR
     fw[EDK II OVMF<br>Firmware] --> sbkern
-    subgraph stboot UKI
-        sbkern[stboot<br>Linux<br>Kernel]
+    subgraph Secure-Boot-signed UKI
+        sbkern[stboot<br>Linux<br>Kernel]-->sbinit[stboot<br>Initramfs]
     end
-    sbkern --Fetched<br>via<br>HTTPS--> kernel[NekOS<br>Linux<br>Kernel]
+    sbinit --Fetched<br>via<br>HTTPS--> kernel[NekOS<br>Linux<br>Kernel]
     subgraph stboot-signed ZIP
         subgraph Custom Initramfs 
             init[Toybox<br>Init]
@@ -124,6 +124,7 @@ Current tests:
 | fw,kernel | Test firmware and kernel. |
 | fw,kernel,initramfs | Test firmware, kernel, and initramfs (not packed into UKI). |
 | fw,kernel,initramfs,stboot | Test OS image booted via stboot UKI. |
+| fw,kernel,initramfs,stboot,sb-pass | Test OS image booted via stboot UKI, with our custom Secure Boot keychain. It should **pass**. |
 | fw,kernel,initramfs,uki | Test firmware, kernel, and initramfs (packed into UKI). |
 | fw,kernel,initramfs,uki,sb-fail | Test firmware, kernel, and initramfs (packed into UKI), with Microsoft Secure Boot keychain. It should **fail**. |
 | fw,kernel,initramfs,uki,sb-pass | Test firmware, kernel, and initramfs (packed into UKI), with our custom Secure Boot keychain. It should **pass**. |
@@ -131,11 +132,8 @@ Current tests:
 | microvm,kernel,initramfs,serialonly | Run the kernel & initramfs as a MicroVM. We only expect text output here. |
 
 ## Future Plans
-* Sign stboot UKI using Secure Boot keys, like existing direct-UKI boot
-  * Move stboot key generation into keygen build step
-  * Add tests to test full stboot flow with Secure Boot
-  * Consider signing UKIs for Secure Boot using a YubiKey as a HSM:
-    * https://docs.system-transparency.org/st-1.3.0/docs/how-to/secure-boot/sign-efi-applications/yubikey/
+* Consider signing UKIs for Secure Boot using a YubiKey as a HSM:
+  * https://docs.system-transparency.org/st-1.3.0/docs/how-to/secure-boot/sign-efi-applications/yubikey/
 * Reproducible firmware build with ability to pre-compute SEV hashes, allowing for Confidential Compute in BYOF environments
   * Like how AWS do it for [their EDK II build](https://github.com/aws/uefi), which uses Nix to guarantee reproducibility
   * Add the SEV-SNP measurements into the build process using [sev-snp-measure](https://github.com/virtee/sev-snp-measure) or something similar.

@@ -10,6 +10,13 @@ podman build --target final -t keygen .
 if ! [ -f "$(pwd)/keys/db-priv.pem" ]
   then
     podman run --rm -it -v "$(pwd)/keys:/opt/out:Z" --entrypoint rsync keygen -avsh /opt/sbkeys/ /opt/out/
+  else
+    echo ""
+    echo "Keys already exist in keys/ directory"
+    echo "Refusing to overwrite"
+fi
+if ! [ -f "$(pwd)/keys/rootkey.pem" ]
+  then
     podman run --rm -it -v "$(pwd)/keys:/opt/out:Z" --entrypoint rsync keygen -avsh /opt/stbootkeys/ /opt/out/
   else
     echo ""

@@ -9,7 +9,8 @@ RUN apk --no-cache add \
     cpio \
     git \
     go \
-    pigz
+    pigz \
+    sbsigntool
 
 # Don't forget to build the kernel and initramfs before
 # trying to combine them into a UKI
@@ -45,6 +46,18 @@ RUN /opt/stimages/contrib/stboot/build-stboot \
     keys/rootcert.pem \
     uki
 
+# Sign stboot UKI (with Secure Boot keys)
+RUN sbsign \
+    --key /opt/stimages/keys/db-priv.pem \
+    --cert /opt/stimages/keys/db-cert.pem \
+    --output /opt/stimages/stboot.uki.signed \
+    /opt/stimages/stboot.uki
+
+# Validate UKI to make sure signing succeeded
+RUN sbverify \
+    --cert /opt/stimages/keys/db-cert.pem \
+    /opt/stimages/stboot.uki.signed
+
 # Build OS image with ospkg create
 RUN stmgr ospkg create \
     --label="NekOS" \
@@ -53,7 +66,7 @@ RUN stmgr ospkg create \
     --url=http://10.0.2.2:8000/nekos.zip \
     --out=nekos.zip
 
-# Sign OS package
+# Sign OS package (with stboot keys)
 RUN stmgr ospkg sign \
     --cert keys/cert.pem \
     --key keys/key.pem \
@@ -61,7 +74,7 @@ RUN stmgr ospkg sign \
 
 # Final container that just contains our stboot UKI, OS image, and JSON manifest
 FROM docker.io/library/alpine:3.23 as final
-COPY --from=stbootuki /opt/stimages/stboot.uki /opt/stboot.uki
+COPY --from=stbootuki /opt/stimages/stboot.uki.signed /opt/stboot.uki.signed
 COPY --from=stbootuki /opt/stimages/nekos.json /opt/nekos.json
 COPY --from=stbootuki /opt/stimages/nekos.zip /opt/nekos.zip
 WORKDIR /opt

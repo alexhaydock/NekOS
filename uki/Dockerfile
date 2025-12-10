@@ -22,3 +22,8 @@ RUN ukify build \
     --secureboot-private-key="/opt/keys/db-priv.pem" \
     --secureboot-certificate="/opt/keys/db-cert.pem" \
     --sign-kernel
+
+# Validate UKI to make sure signing succeeded
+RUN sbverify \
+    --cert /opt/keys/db-cert.pem \
+    /opt/uki.efi

@@ -17,7 +17,7 @@ if [ "$(uname -m)" == "x86_64" ]; then
 
     # Run container to copy stboot UKI, OS image, and
     # JSON manifest  into output dir
-    podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp stboot -fv /opt/stboot.uki /opt/out/stboot.uki
+    podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp stboot -fv /opt/stboot.uki.signed /opt/out/stboot.uki.signed
     podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp stboot -fv /opt/nekos.json /opt/out/nekos.json
     podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp stboot -fv /opt/nekos.zip /opt/out/nekos.zip
 fi
