@@ -9,15 +9,20 @@ WORKDIR /opt/edk2
 RUN git submodule update --init --recursive --depth 1
 
 # Copy custom logo into the firmware build
-COPY logo.png /opt/logo.png
-RUN dnf install -y ImageMagick && \
-    dnf clean all && \
-    magick \
-        /opt/logo.png \
-        -background black \
-        -alpha remove \
-        -define bmp:format=mbp3 \
-        /opt/edk2/MdeModulePkg/Logo/Logo.bmp
+#
+# I'm doing this statically now to make reproducible
+# builds easier, but the command used to generate this
+# dynamically before was to run this against the logo
+# from the root of this repo:
+#
+# magick \
+#     /opt/logo.png \
+#     -background black \
+#     -alpha remove \
+#     -define bmp:format=mbp3 \
+#     /opt/edk2/MdeModulePkg/Logo/Logo.bmp
+#
+COPY logo.bmp /opt/edk2/MdeModulePkg/Logo/Logo.bmp
 
 # Build OVMF CODE with support for Secure Boot, TPM, and
 # paravirtualised UEFI vars
