@@ -26,7 +26,7 @@ I'm hoping to use this to research Verified Boot, Confidential Compute, and "Bri
   * Secure Boot enabled and Microsoft keys enrolled
   * Secure Boot enabled and custom keys enrolled
 * Linux kernel built from source
-* Custom userland based on Toybox
+* Custom userland based on BusyBox
 * Kernel + userland packed into a Unified Kernel Image (UKI)
 * UKI signed with a custom Secure Boot keychain
 * Support for running a macOS (Apple Silicon) host, including all the Secure Boot functionality
@@ -40,7 +40,7 @@ flowchart LR
     kernel[NekOS<br>Linux<br>Kernel]
     subgraph Secure-Boot-signed UKI
         subgraph Custom Initramfs
-            init[Toybox<br>Init]
+            init[BusyBox<br>Init]
             init --> tinywl[tinywl<br>Compositor]
             tinywl --> swayimg[swayimg<br>😸]
         end
@@ -64,7 +64,7 @@ flowchart LR
     sbinit --Fetched<br>via<br>HTTPS--> kernel[NekOS<br>Linux<br>Kernel]
     subgraph stboot-signed ZIP
         subgraph Custom Initramfs 
-            init[Toybox<br>Init]
+            init[BusyBox<br>Init]
             init --> tinywl[tinywl<br>Compositor]
             tinywl --> swayimg[swayimg<br>😸]
         end
