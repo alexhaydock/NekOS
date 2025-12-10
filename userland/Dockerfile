@@ -1,5 +1,5 @@
-# Container to build Toybox
-FROM docker.io/library/alpine:3.23 as toybuild
+# Container to build BusyBox
+FROM docker.io/library/alpine:3.23 as busybuild
 
 # See: https://github.com/tianon/dockerfiles/blob/master/toybox/Dockerfile
 RUN apk --no-cache add \
@@ -12,77 +12,75 @@ RUN apk --no-cache add \
     make \
     musl-dev
 
-RUN git clone --depth 1 https://github.com/landley/toybox.git /opt/toybox
+RUN git clone --depth 1 https://git.busybox.net/busybox /opt/busybox
 
-WORKDIR /opt/toybox
+WORKDIR /opt/busybox
 
-# Generate default Toybox config
+# Generate default BusyBox config
 RUN make defconfig
 
-# Add some of our own config options to build some of the
-# experimental "toys"
+# Build BusyBox as a static binary, and set some options.
 #
-# We particularly need modprobe since we're building with a
-# config that uses kernel modules and without it we can't
-# insert them
-RUN sed -i 's/^# CONFIG_GETTY.*/CONFIG_GETTY=y/' .config && \
-    sed -i 's/^# CONFIG_INIT.*/CONFIG_INIT=y/' .config && \
-    sed -i 's/^# CONFIG_MODPROBE.*/CONFIG_MODPROBE=y/' .config && \
-    sed -i 's/^# CONFIG_VI.*/CONFIG_VI=y/' .config
+# Previously I used Toybox here but it seems a little easier to
+# build BusyBox statically and not worry about libraries.
+#
+# For Toybox we needed to enable CONFIG_INIT and CONFIG_MODPROBE
+# here to allow it to be used as the init system, and to insert
+# kernel modules, but it seems like those are defaults for BusyBox.
+#
+# We disable tc here due to BusyBox's tc code still relying on
+# CBQ which was removed in Linux 6.8 and otherwise causes build
+# failures.
+#
+# We need to hardcode the destination directory that `make install`
+# will later use here for some reason, in the CONFIG_PREFIX var.
+RUN sed -i 's;^# CONFIG_STATIC is not set;CONFIG_STATIC=y;' .config && \
+    sed -i 's;^CONFIG_TC=y;# CONFIG_TC is not set;' .config && \
+    sed -i 's;^CONFIG_FEATURE_TC_INGRESS=y;# CONFIG_FEATURE_TC_INGRESS is not set;' .config && \
+    sed -i 's;^CONFIG_PREFIX=.*;CONFIG_PREFIX="/opt/userland";' .config && \
+    grep -E 'CONFIG_STATIC|CONFIG_TC|CONFIG_FEATURE_TC_INGRESS|CONFIG_PREFIX' .config
 
-# Build Toybox
+# Build BusyBox
 RUN make -j"$(nproc)"
 
-# Create output dir
-RUN mkdir -p /opt/toybox/fs
-
-# Copy Toybox into output dir
-RUN PREFIX=/opt/toybox/fs make install
-
-# Create symlink between sbin/init and init, since the kernel
-# expects to see our init at /init
-WORKDIR /opt/toybox/fs
-RUN ln -s sbin/init init
+# Create a directory to put our userland in
+RUN mkdir -p /opt/userland
 
 # Create some standard Linux FHS directories we'll need
-RUN mkdir -p dev sys etc proc usr
-RUN mkdir -p etc/init.d usr/share
+RUN mkdir -p \
+      /opt/userland/bin \
+      /opt/userland/dev \
+      /opt/userland/etc/init.d \
+      /opt/userland/lib \
+      /opt/userland/proc \
+      /opt/userland/sbin \
+      /opt/userland/sys \
+      /opt/userland/tmp \
+      /opt/userland/usr/bin \
+      /opt/userland/usr/lib \
+      /opt/userland/usr/sbin \
+      /opt/userland/usr/share
 
-# Add our init script into /etc/init.d
-COPY rcS /opt/toybox/fs/etc/init.d/rcS
-RUN chmod +x /opt/toybox/fs/etc/init.d/rcS
-
-# Container to cheat a bit and copy some pre-built Alpine assets
-# and dynamic libraries into the container
-FROM docker.io/library/alpine:3.23 as dynamiclibs
-
-# Install any deps we want to copy into our destination environment
-RUN apk --no-cache add bash
-
-# Copy our Toybox build so far
-RUN mkdir -p /opt/toybox/fs
-COPY --from=toybuild /opt/toybox/fs /opt/toybox/fs
-WORKDIR /opt/toybox/fs
-
-# Create lib directories
-RUN mkdir -p /opt/toybox/fs/lib /opt/toybox/fs/usr/lib
-
-# Cheat a bit and copy the host's bash into the environment, along
-# with the dynamic libs from running `ldd /bin/bash`
+# Install BusyBox into output dir
 #
-# Note we copy it as /bin/sh as a cheap way of setting it as the
-# default shell
-RUN cp /bin/bash bin/sh
-RUN for i in $(ldd /opt/toybox/fs/bin/sh | grep '=>' | awk '{print $3}'); do \
-      cp -fv "${i}" "/opt/toybox/fs${i}"; \
-    done
+# This will also set up the symlinks to the static
+# BusyBox binary for us
+#
+# Unlike Toybox, we don't need to create
+# a symlink to /sbin/init since BusyBox will also
+# do that for us
+RUN make install
+
+# Add our init script
+COPY init /opt/userland/init
+RUN chmod +x /opt/userland/init
 
 # Container to build wlroots as our graphical compositor
 FROM docker.io/library/alpine:3.23 as wlroots
 
-# Copy our Toybox build so far
-RUN mkdir -p /opt/toybox/fs
-COPY --from=dynamiclibs /opt/toybox/fs /opt/toybox/fs
+# Copy our BusyBox build so far
+RUN mkdir -p /opt/userland
+COPY --from=busybuild /opt/userland /opt/userland
 
 # Discover the version of wlroots that this release of Alpine is shipping
 # (lazily, by installing the package)
@@ -100,6 +98,11 @@ RUN wget --quiet \
 
 # Build wlroots
 # Based on: https://gitlab.freedesktop.org/wlroots/wlroots/-/blob/abf80b529e48823e21215a6ccc4653e2c2a4a565/.builds/alpine.yml
+#
+# REMOVED since we didn't actually use the whole wlroots
+# build here -- we were just copying in tinywl which we
+# can (and do) build independently below
+#
 #WORKDIR /opt/wlroots
 #RUN apk --no-cache add \
 #    alpine-sdk \
@@ -136,14 +139,14 @@ RUN apk --no-cache add \
 RUN make
 
 # Copy the tinywl compositor into our distro filesystem
-RUN cp -fv /opt/wlroots/tinywl/tinywl /opt/toybox/fs/bin/
+RUN cp -fv /opt/wlroots/tinywl/tinywl /opt/userland/bin/
 
 # Copy the dynamic libs needed for tinywl into our distro filesystem
 #
 # This is a little cheat where we use ldd and loop over the libs
 # and copy them from our Alpine host
-RUN for i in $(ldd /opt/toybox/fs/bin/tinywl | grep '=>' | awk '{print $3}'); do \
-      cp -fv "${i}" "/opt/toybox/fs${i}"; \
+RUN for i in $(ldd /opt/userland/bin/tinywl | grep '=>' | awk '{print $3}'); do \
+      cp -fv "${i}" "/opt/userland${i}"; \
     done
 
 # Add seatd seat management daemon which is required by wlroots
@@ -152,13 +155,13 @@ RUN for i in $(ldd /opt/toybox/fs/bin/tinywl | grep '=>' | awk '{print $3}'); do
 # We cheat again here and directly unpack the Alpine binary build
 # in the root of the initramfs, which puts everything from the
 # package into the right directories
-WORKDIR /opt/toybox/fs
+WORKDIR /opt/userland
 RUN apk --no-cache fetch seatd && \
     tar xf seatd*.apk && \
     rm seatd*.apk
 RUN apk --no-cache add seatd && \
-    for i in $(ldd /opt/toybox/fs/usr/bin/seatd | grep '=>' | awk '{print $3}'); do \
-      cp -fv "${i}" "/opt/toybox/fs${i}"; \
+    for i in $(ldd /opt/userland/usr/bin/seatd | grep '=>' | awk '{print $3}'); do \
+      cp -fv "${i}" "/opt/userland${i}"; \
     done
 
 # Add libudev-zero so we don't need to deal with setting up and
@@ -176,8 +179,8 @@ RUN apk --no-cache fetch nyancat && \
     tar xf nyancat*.apk && \
     rm nyancat*.apk
 RUN apk --no-cache add nyancat && \
-    for i in $(ldd /opt/toybox/fs/usr/bin/nyancat | grep '=>' | awk '{print $3}'); do \
-      cp -fv "${i}" "/opt/toybox/fs${i}"; \
+    for i in $(ldd /opt/userland/usr/bin/nyancat | grep '=>' | awk '{print $3}'); do \
+      cp -fv "${i}" "/opt/userland${i}"; \
     done
 
 # Add mokutil for testing Secure Boot is working
@@ -185,8 +188,8 @@ RUN apk --no-cache fetch mokutil && \
     tar xf mokutil*.apk && \
     rm mokutil*.apk
 RUN apk --no-cache add mokutil && \
-    for i in $(ldd /opt/toybox/fs/usr/bin/mokutil | grep '=>' | awk '{print $3}'); do \
-      cp -fv "${i}" "/opt/toybox/fs${i}"; \
+    for i in $(ldd /opt/userland/usr/bin/mokutil | grep '=>' | awk '{print $3}'); do \
+      cp -fv "${i}" "/opt/userland${i}"; \
     done
 
 # Add swayimg as our graphical image viewer
@@ -194,20 +197,20 @@ RUN apk --no-cache fetch swayimg && \
     tar xf swayimg*.apk && \
     rm swayimg*.apk
 RUN apk --no-cache add swayimg && \
-    for i in $(ldd /opt/toybox/fs/usr/bin/swayimg | grep '=>' | awk '{print $3}'); do \
-      cp -fv "${i}" "/opt/toybox/fs${i}"; \
+    for i in $(ldd /opt/userland/usr/bin/swayimg | grep '=>' | awk '{print $3}'); do \
+      cp -fv "${i}" "/opt/userland${i}"; \
     done
 
 # Add some images for viewing with swayimg
-COPY cats/ /opt/toybox/fs/opt/cats/
+COPY cats/ /opt/userland/opt/cats/
 
 # Create $XDG_RUNTIME_DIR for root which Wayland depends on
-RUN mkdir -p /opt/toybox/fs/run/user/0
-RUN echo 'export XDG_RUNTIME_DIR=/run/user/0' > /opt/toybox/fs/.bashrc
-RUN chmod +x /opt/toybox/fs/.bashrc
+RUN mkdir -p /opt/userland/run/user/0
+RUN echo 'export XDG_RUNTIME_DIR=/run/user/0' > /opt/userland/.bashrc
+RUN chmod +x /opt/userland/.bashrc
 
 # Borrow our keyboard keymaps etc from the Alpine host OS
-RUN cp -rfv /usr/share/X11/ /opt/toybox/fs/usr/share/X11/
+RUN cp -rfv /usr/share/X11/ /opt/userland/usr/share/X11/
 
 # Container to build our filesystem into an initramfs
 FROM docker.io/library/alpine:3.23 as initramfs
@@ -215,24 +218,21 @@ FROM docker.io/library/alpine:3.23 as initramfs
 # Install deps for initramfs building
 RUN apk --no-cache add cpio
 
-# Copy our Toybox build so far
-RUN mkdir -p /opt/toybox/fs
-COPY --from=wlroots /opt/toybox/fs /opt/toybox/fs
+# Copy our BusyBox build so far
+RUN mkdir -p /opt/userland
+COPY --from=wlroots /opt/userland /opt/userland
 
 # Copy in our kernel modules from our kernel build container
-# It's important that we've set CONFIG_MODULE_COMPRESS=n in our
-# kernel config here, because the implementation of modprobe in
-# Toybox doesn't seem to be built with gzip support
-COPY --from=localhost/kb:latest /opt/mod/lib/modules /opt/toybox/fs/lib/modules
+COPY --from=localhost/kb:latest /opt/mod/lib/modules /opt/userland/lib/modules
 
-# Enter our Toybox dir and pack our initramfs
-WORKDIR /opt/toybox/fs
+# Enter our BusyBox dir and pack our compressed initramfs
+WORKDIR /opt/userland
 RUN apk --no-cache add findutils && \
-    find . | cpio -o -H newc > /opt/initramfs.cpio && \
+    find . -print0 | cpio --null -o --format=newc | gzip -9 > ../initramfs && \
     find . -type f -printf '%s %p\n' | sort -nr > /opt/initramfs.txt
 
 # Final container that just contains our initramfs and nothing more
 FROM docker.io/library/alpine:3.23 as final
-COPY --from=initramfs /opt/initramfs.cpio /opt/initramfs.cpio
+COPY --from=initramfs /opt/initramfs /opt/initramfs
 COPY --from=initramfs /opt/initramfs.txt /opt/initramfs.txt
 WORKDIR /opt
