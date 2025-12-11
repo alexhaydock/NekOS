@@ -60,7 +60,7 @@ build_uefi()
 	    # Build OVMF for booting x86_64 Nitro Guests
 	    echo "     BUILD  OvmfPkg"
 
-	    defines="${defines} -DSECURE_BOOT_ENABLE=TRUE -DTPM2_ENABLE=TRUE"
+	    defines="${defines} -D SECURE_BOOT_ENABLE=TRUE -D TPM2_ENABLE=TRUE -D QEMU_PV_VARS=TRUE"
 	    [ -n "$UEFI_DEBUG" ] && defines="${defines} -DDEBUG_ON_SERIAL_PORT"
 
 	    build -a X64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p OvmfPkg/OvmfPkgX64.dsc ${defines}

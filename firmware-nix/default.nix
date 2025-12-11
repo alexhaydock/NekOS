@@ -35,6 +35,17 @@ pkgs.stdenv.mkDerivation rec {
     ./patches/0001-add-build-script.patch
   ];
 
+  # From Nix upstream:
+  #   https://github.com/NixOS/nixpkgs/blob/nixos-25.11/pkgs/applications/virtualization/OVMF/default.nix#L140-L145
+  # Resolves OpenSSL build error:
+  #   https://github.com/tianocore/edk2/issues/11186#issuecomment-2967614183
+  hardeningDisable = [
+    "format"
+    "stackprotector"
+    "pic"
+    "fortify"
+  ];
+
   patchPhase = ''
     # We need a custom patch phase because the default one uses the `patch` utility, which doesn't support binary Git diffs.
 
