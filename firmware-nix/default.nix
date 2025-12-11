@@ -9,7 +9,7 @@
 }:
 pkgs.stdenv.mkDerivation rec {
   pname = "nekos-firmware";
-  version = "edk2-stable202211";
+  version = "edk2-stable202511";
 
   nativeBuildInputs = with pkgs; [
     acpica-tools
@@ -26,14 +26,13 @@ pkgs.stdenv.mkDerivation rec {
   src = pkgs.fetchFromGitHub {
     owner = "tianocore";
     repo = "edk2";
-    rev = "edk2-stable202211";
+    rev = "edk2-stable202511";
     fetchSubmodules = true;
-    sha256 = "sha256-0jE73xPyenAcgJ1mS35oTc5cYw7jJvVYxhPdhTWpKA0=";
+    sha256 = "sha256-R/rgz8dWcDYVoiM67K2UGuq0xXbjjJYBPtJ1FmfGIaU=";
   };
 
   patches = [
     ./patches/0001-add-build-script.patch
-    ./patches/9001-Remove-Wno-format-compiling-flag-for-Openssl-files.patch
   ];
 
   patchPhase = ''
@@ -46,6 +45,9 @@ pkgs.stdenv.mkDerivation rec {
   '';
 
   buildPhase = ''
+    # Ensure the Nix Python is exported as a var for scripts that read it
+    export PYTHON_COMMAND="python3"
+
     patchShebangs ./build.sh
     patchShebangs BaseTools/BinWrappers/PosixLike/
 

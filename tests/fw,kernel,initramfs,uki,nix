@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+
+# This test validates:
+#   - OVMF firmware build
+#   - Kernel build
+#   - Initramfs build
+#   - UKI build
+
+# Copy empty insecure VARS to temp location
+cp -fv /usr/share/edk2/ovmf/OVMF_VARS.fd /tmp/OVMF_VARS.fd
+
+# Configure options based on system arch
+. ./.archconfig
+
+${qemu} \
+  -m 2G \
+  -cpu host \
+  -machine q35,smm=on,vmport=off,accel=kvm \
+  -kernel ../uki/build/uki.efi \
+  -drive if=pflash,format=raw,unit=0,file=../firmware-nix/build/ovmf_img.fd,readonly=on \
+  -drive if=pflash,format=raw,unit=1,file=/tmp/OVMF_VARS.fd \
+  -append "earlyprintk=${console} console=${console}" \
+  -serial mon:stdio \
+  -display ${display}

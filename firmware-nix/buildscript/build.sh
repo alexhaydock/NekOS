@@ -18,7 +18,6 @@ SOURCE="${BASH_SOURCE[0]}"
 SOURCE="$(readlink -e ${SOURCE})"
 DIR="$( cd -P "$( dirname ${SOURCE} )" && pwd )"
 PACKAGES_PATH=${PACKAGES_PATH:-$DIR}
-LOGFILE="uefi_build.log"
 
 cd ${DIR}
 
@@ -26,7 +25,6 @@ TPUT="$([ -z "${TERM}" -o "${TERM}" = dumb ] && echo true || echo tput)"
 
 ${TPUT} setaf 2
 echo "     BUILD  uefi"
-echo "      LOGS  ${DIR}/${LOGFILE}"
 ${TPUT} sgr0
 
 unset MAKEFLAGS
@@ -54,26 +52,24 @@ TOOLCHAIN="GCC5"
 #
 build_uefi()
 {
-	# We only care about the latest build log so we just
-	# wipe everything that might be in the build log
 	echo "      MAKE  BaseTools"
-	make -C BaseTools &> "${LOGFILE}"
-	source edksetup.sh >> "${LOGFILE}"
+	make -C BaseTools
+	source edksetup.sh
 
 	if [ "$ARCH_TARGET" = "x86" ]; then
 	    # Build OVMF for booting x86_64 Nitro Guests
 	    echo "     BUILD  OvmfPkg"
 
-	    defines="${defines} -DTPM2_ENABLE=TRUE -DTPM1_ENABLE=FALSE"
+	    defines="${defines} -DSECURE_BOOT_ENABLE=TRUE -DTPM2_ENABLE=TRUE"
 	    [ -n "$UEFI_DEBUG" ] && defines="${defines} -DDEBUG_ON_SERIAL_PORT"
 
-	    build -a X64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p OvmfPkg/OvmfPkgX64.dsc ${defines} >> "${LOGFILE}"
+	    build -a X64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p OvmfPkg/OvmfPkgX64.dsc ${defines}
 	    cp Build/OvmfX64/${BUILD_TYPE}_${TOOLCHAIN}/FV/OVMF.fd ovmf_img.fd
 
 	elif [ "$ARCH_TARGET" = "arm64" ]; then
 	    # Build ArmvirtQemuKernel, passed to Nitro Guests
 	    echo "     BUILD  ArmVirtQemuKernel"
-	    build -a AARCH64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p ArmVirtPkg/ArmVirtQemuKernel.dsc >> "${LOGFILE}"
+	    build -a AARCH64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p ArmVirtPkg/ArmVirtQemuKernel.dsc
 	    cp Build/ArmVirtQemuKernel-AARCH64/${BUILD_TYPE}_${TOOLCHAIN}/FV/QEMU_EFI.fd uefi_img.fd
 
 	else
