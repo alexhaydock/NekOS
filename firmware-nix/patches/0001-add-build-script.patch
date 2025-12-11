@@ -1,10 +1,11 @@
 diff --git a/build.sh b/build.sh
 new file mode 100755
-index 0000000..231ab40
+index 0000000..cd238bd
 --- /dev/null
 +++ b/build.sh
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,85 @@
 +#!/bin/bash
++#shellcheck disable=all
 +# Copyright 2018-2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 +set -e -o pipefail
 +
@@ -62,7 +63,7 @@ index 0000000..231ab40
 +	# We only care about the latest build log so we just
 +	# wipe everything that might be in the build log
 +	echo "      MAKE  BaseTools"
-+	make -C BaseTools #&> "${LOGFILE}"
++	make -C BaseTools &> "${LOGFILE}"
 +	source edksetup.sh >> "${LOGFILE}"
 +
 +	if [ "$ARCH_TARGET" = "x86" ]; then

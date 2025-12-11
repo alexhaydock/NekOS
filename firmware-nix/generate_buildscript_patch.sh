@@ -10,5 +10,8 @@
 # and we need to ensure the executable bit
 # is preserved.
 
+(
+cd buildscript || exit
 chmod +x build.sh
-git diff --no-index /dev/null build.sh > "patches/0001-add-build-script.patch"
+git diff --no-index /dev/null build.sh > "../patches/0001-add-build-script.patch"
+)
