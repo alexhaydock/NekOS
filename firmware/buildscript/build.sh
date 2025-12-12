@@ -49,7 +49,7 @@ build_uefi()
 	make -C BaseTools
 	source edksetup.sh
 
-    determinism="-D SORT_COMPONENTS=TRUE -D BUILD_MULTIPLE_THREAD=FALSE"
+	determinism="-D SORT_COMPONENTS=TRUE -D BUILD_MULTIPLE_THREAD=FALSE"
 	features="-D SECURE_BOOT_ENABLE=TRUE -D TPM2_ENABLE=TRUE -D QEMU_PV_VARS=TRUE"
 	[ -n "$UEFI_DEBUG" ] && features="${features} -DDEBUG_ON_SERIAL_PORT"
 
