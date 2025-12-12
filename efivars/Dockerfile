@@ -1,7 +1,10 @@
 FROM registry.fedoraproject.org/fedora:43 as builder
 
 # Install virt-fw-vars to create some JSON vars stores
-RUN dnf install -y python3-virt-firmware edk2-ovmf && \
+RUN dnf install -y \
+        edk2-ovmf \
+        python3-virt-firmware \
+        uuidgen && \
     dnf clean all
 
 # Create a blank JSON VARS store so we have something to
