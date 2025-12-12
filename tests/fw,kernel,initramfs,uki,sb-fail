@@ -8,7 +8,7 @@
 #   - Secure Boot (using default Microsoft keys, which should fail)
 
 # Copy Secure Boot VARS with Microsoft keys to temp location
-cp -fv ../firmware/build/OVMF_VARS_MS.json /tmp/OVMF_VARS_MS.json
+cp -fv ../efivars/build/OVMF_VARS_MS.json /tmp/OVMF_VARS_MS.json
 
 # Configure options based on system arch
 . ./.archconfig
