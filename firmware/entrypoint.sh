@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build with Nix
-nix-build --pure --option sandbox true
+nix-build --pure --option sandbox true --cores 1
 
 # Hash output
 sha256sum /opt/firmware/result/firmware.fd
