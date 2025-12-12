@@ -5,7 +5,10 @@
 ./generate_buildscript_patch.sh
 
 # Build with Nix
-command -v nix-build || echo 'Nix is not installed! Exiting.' && exit 1
+if ! command -v nix-build; then
+  echo 'Nix is not installed! Exiting.'
+  exit 1
+fi
 nix-build --pure
 
 # Output into build directory
