@@ -1,29 +1,22 @@
-#!/usr/bin/env sh
-
-# Generate patch to add build script
-# Just in case we've updated it
-./generate_buildscript_patch.sh
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Build with Nix
-if ! command -v nix-build >/dev/null 2>&1; then
-  echo 'Nix is not installed! Exiting.'
-  exit 1
-fi
-nix-build --pure
+podman build --target final -t firmware .
 
-# Output into build directory
-mkdir -p build
-cp -fv result/firmware.fd build/firmware.fd
+# Run container (debug version)
+#podman run --rm -it --entrypoint bash firmware
+
+# Copy built firmware out of container
+podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp firmware -fv /opt/firmware.fd /opt/out/firmware.fd
 
 # Validate build hash based on architecture
 arch="$(uname -m)"
-
 case "$arch" in
     "x86_64" | "amd64")
         if ! echo '01b673bbb8e9bf7770b98fd2e8987c231b14a92367fe5988a975a43594ab25f2  build/firmware.fd' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
-            exit 2
         else
             echo 'Build matches expected checksum!'
         fi

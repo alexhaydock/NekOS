@@ -75,18 +75,17 @@ flowchart LR
 ## Build Instructions
 I don't support this as a general tool, but if you want to base your own project on this then all of the code should be fairly easy to understand, as I've tried to comment it where possible.
 
-To build and test this, you need `nix`, `podman`, and `qemu`.
+To build and test this, you need `podman`, and `qemu`.
 
 Since this makes use of the QEMU [Host UEFI variable service](https://www.qemu.org/docs/master/devel/uefi-vars.html#host-uefi-variable-service), you will need at least QEMU 10 to make full use of this.
 
 Install dependencies (Fedora):
 ```sh
-sudo dnf install -y nix podman qemu
+sudo dnf install -y podman qemu
 ```
 
 Install dependencies (macOS):
 ```sh
-sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install)
 brew install podman qemu
 ```
 
