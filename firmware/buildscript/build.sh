@@ -49,19 +49,20 @@ build_uefi()
 	make -C BaseTools
 	source edksetup.sh
 
-	defines="${defines} -D SECURE_BOOT_ENABLE=TRUE -D TPM2_ENABLE=TRUE -D QEMU_PV_VARS=TRUE"
-	[ -n "$UEFI_DEBUG" ] && defines="${defines} -DDEBUG_ON_SERIAL_PORT"
+    determinism="-D SORT_COMPONENTS=TRUE -D BUILD_MULTIPLE_THREAD=FALSE"
+	features="-D SECURE_BOOT_ENABLE=TRUE -D TPM2_ENABLE=TRUE -D QEMU_PV_VARS=TRUE"
+	[ -n "$UEFI_DEBUG" ] && features="${features} -DDEBUG_ON_SERIAL_PORT"
 
 	arch="$(uname -m)"
 	case "$arch" in
 		"x86_64" | "amd64")
 			echo "     BUILD  OvmfPkg"
-			build -a X64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p OvmfPkg/OvmfPkgX64.dsc ${defines}
+			build -a X64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p OvmfPkg/OvmfPkgX64.dsc ${features} ${determinism}
 			cp Build/OvmfX64/${BUILD_TYPE}_${TOOLCHAIN}/FV/OVMF.fd firmware.fd
 		;;
 		"aarch64" | "arm64")
 			echo "     BUILD  ArmVirtQemu"
-			build -a AARCH64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p ArmVirtPkg/ArmVirtQemu.dsc ${defines}
+			build -a AARCH64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p ArmVirtPkg/ArmVirtQemu.dsc ${features} ${determinism}
 			cp Build/ArmVirtQemu-AArch64/${BUILD_TYPE}_${TOOLCHAIN}/FV/QEMU_EFI.fd firmware.fd
 
 			# QEMU expects 64MiB CODE and VARS files on ARM/AARCH64 architectures
