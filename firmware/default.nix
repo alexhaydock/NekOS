@@ -76,7 +76,7 @@ pkgs.stdenv.mkDerivation rec {
     patchShebangs ./build.sh
     patchShebangs BaseTools/BinWrappers/PosixLike/
 
-    ./build.sh x86
+    ./build.sh
   '';
 
   installPhase = ''

@@ -64,7 +64,7 @@ build_uefi()
 			echo "     BUILD  ArmVirtQemuKernel"
 
 			build -a AARCH64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p ArmVirtPkg/ArmVirtQemuKernel.dsc
-			cp Build/ArmVirtQemuKernel-AARCH64/${BUILD_TYPE}_${TOOLCHAIN}/FV/QEMU_EFI.fd firmware.fd
+			cp Build/ArmVirtQemuKernel-AArch64/${BUILD_TYPE}_${TOOLCHAIN}/FV/QEMU_EFI.fd firmware.fd
 		;;
 	esac
 }
