@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Build with Nix
+# Build with Nix using deterministic options
 nix-build --pure --option sandbox true --cores 1
 
 # Hash output
