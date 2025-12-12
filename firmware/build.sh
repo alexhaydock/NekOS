@@ -17,7 +17,7 @@ podman run --rm -it \
 arch="$(uname -m)"
 case "$arch" in
     "x86_64" | "amd64")
-        if ! echo '01b673bbb8e9bf7770b98fd2e8987c231b14a92367fe5988a975a43594ab25f2  build/firmware.fd' \
+        if ! echo '6da3fb3d8610ad8930c8069b62a15cd00f5a5827a804650f7ea6fe1eefe80728  build/firmware.fd' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
             exit 1
