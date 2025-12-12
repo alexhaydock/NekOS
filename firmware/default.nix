@@ -20,6 +20,13 @@ pkgs.stdenv.mkDerivation rec {
     python3
   ];
 
+  buildInputs = with pkgs; [
+    util-linux.dev
+  ];
+
+  # Do not allow the use of host binaries, for reproducibility's sake
+  strictDeps = true;
+
   # To rev this version we can set a dummy sha256 string of:
   #   "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
   # And then run a build, to have Nix tell us the actual hash.
