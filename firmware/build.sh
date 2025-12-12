@@ -14,7 +14,7 @@ podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp firmware -fv /o
 arch="$(uname -m)"
 case "$arch" in
     "x86_64" | "amd64")
-        if ! echo '01b673bbb8e9bf7770b98fd2e8987c231b14a92367fe5988a975a43594ab25f2  build/firmware.fd' \
+        if ! echo 'd30fab69a4e01c44d6a246dffdd50dffb6cf24e4e583bda654d8a56e93c445ac  build/firmware.fd' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
         else
