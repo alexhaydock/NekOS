@@ -22,6 +22,11 @@ case "$arch" in
         fi
     ;;
     "aarch64" | "arm64")
-        echo 'WIP'
+        if ! echo 'd36ce4fa3cf12f2e8491a101a77727bf87d705b4784c485cabfa51cf81461d7e  build/firmware.fd' \
+            | sha256sum -c; then
+            echo 'Build does not match expected checksum!'
+        else
+            echo 'Build matches expected checksum!'
+        fi
     ;;
 esac
