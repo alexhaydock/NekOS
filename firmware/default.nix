@@ -3,8 +3,8 @@
 
 {
   pkgs ? import (fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/22.11.tar.gz";
-    sha256 = "sha256:11w3wn2yjhaa5pv20gbfbirvjq6i3m7pqrq2msf0g7cv44vijwgw";
+    url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/25.11.tar.gz";
+    sha256 = "sha256:1zn1lsafn62sz6azx6j735fh4vwwghj8cc9x91g5sx2nrg23ap9k";
   }) {}
 }:
 pkgs.stdenv.mkDerivation rec {
@@ -87,9 +87,11 @@ pkgs.stdenv.mkDerivation rec {
     cp firmware.fd $out/firmware.fd
   '';
 
+  dontPatchELF = true;
+
   meta = {
     description = "UEFI edk2 for NekOS";
-    homepage = "https://github.com/alexhaydock/NekOS";
+    homepage = "https://github.com/alexhaydock/NekOS/tree/main/firmware";
     license = "bsd";
   };
 }
