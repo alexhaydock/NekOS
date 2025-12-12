@@ -57,20 +57,22 @@ build_uefi()
 	source edksetup.sh
 
 	if [ "$ARCH_TARGET" = "x86" ]; then
-	    # Build OVMF for booting x86_64 Nitro Guests
 	    echo "     BUILD  OvmfPkg"
 
 	    defines="${defines} -D SECURE_BOOT_ENABLE=TRUE -D TPM2_ENABLE=TRUE -D QEMU_PV_VARS=TRUE"
 	    [ -n "$UEFI_DEBUG" ] && defines="${defines} -DDEBUG_ON_SERIAL_PORT"
 
 	    build -a X64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p OvmfPkg/OvmfPkgX64.dsc ${defines}
-	    cp Build/OvmfX64/${BUILD_TYPE}_${TOOLCHAIN}/FV/OVMF.fd ovmf_img.fd
+	    cp Build/OvmfX64/${BUILD_TYPE}_${TOOLCHAIN}/FV/OVMF.fd firmware.fd
 
 	elif [ "$ARCH_TARGET" = "arm64" ]; then
-	    # Build ArmvirtQemuKernel, passed to Nitro Guests
 	    echo "     BUILD  ArmVirtQemuKernel"
+
+	    defines="${defines} -D SECURE_BOOT_ENABLE=TRUE -D TPM2_ENABLE=TRUE -D QEMU_PV_VARS=TRUE"
+	    [ -n "$UEFI_DEBUG" ] && defines="${defines} -DDEBUG_ON_SERIAL_PORT"
+
 	    build -a AARCH64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p ArmVirtPkg/ArmVirtQemuKernel.dsc
-	    cp Build/ArmVirtQemuKernel-AARCH64/${BUILD_TYPE}_${TOOLCHAIN}/FV/QEMU_EFI.fd uefi_img.fd
+	    cp Build/ArmVirtQemuKernel-AARCH64/${BUILD_TYPE}_${TOOLCHAIN}/FV/QEMU_EFI.fd firmware.fd
 
 	else
 	    echo "ERROR: Unknown UEFI build target ${ARCH_TARGET}"

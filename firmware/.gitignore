@@ -1,2 +1,3 @@
-Dockerfile-buildenv
-Dockerfile-buildenv.bak
+# No trailing slash as Nix generates this
+# as a symlink to another directory
+result

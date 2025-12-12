@@ -35,6 +35,9 @@ pkgs.stdenv.mkDerivation rec {
     ./patches/0001-add-build-script.patch
   ];
 
+  # Import custom firmware logo from current dir
+  customLogo = ./logo.bmp;
+
   # From Nix upstream:
   #   https://github.com/NixOS/nixpkgs/blob/nixos-25.11/pkgs/applications/virtualization/OVMF/default.nix#L140-L145
   # Resolves OpenSSL build error:
@@ -47,12 +50,16 @@ pkgs.stdenv.mkDerivation rec {
   ];
 
   patchPhase = ''
-    # We need a custom patch phase because the default one uses the `patch` utility, which doesn't support binary Git diffs.
+    # We need a custom patch phase because the default one uses 
+    # the `patch` utility, which doesn't support binary Git diffs.
 
     for patchFile in $patches; do
       echo "Patch $patchFile"
       GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@localhost git apply "$patchFile"
     done
+
+    # Copy in custom logo
+    cp -fv ${customLogo} MdeModulePkg/Logo/Logo.bmp
   '';
 
   buildPhase = ''
@@ -67,7 +74,7 @@ pkgs.stdenv.mkDerivation rec {
 
   installPhase = ''
     mkdir $out
-    cp ovmf_img.fd $out/ovmf_img.fd
+    cp firmware.fd $out/firmware.fd
   '';
 
   meta = {
