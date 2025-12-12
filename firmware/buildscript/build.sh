@@ -56,15 +56,17 @@ build_uefi()
 	case "$arch" in
 		"x86_64" | "amd64")
 			echo "     BUILD  OvmfPkg"
-
 			build -a X64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p OvmfPkg/OvmfPkgX64.dsc ${defines}
 			cp Build/OvmfX64/${BUILD_TYPE}_${TOOLCHAIN}/FV/OVMF.fd firmware.fd
 		;;
 		"aarch64" | "arm64")
 			echo "     BUILD  ArmVirtQemuKernel"
-
 			build -a AARCH64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p ArmVirtPkg/ArmVirtQemuKernel.dsc
 			cp Build/ArmVirtQemuKernel-AArch64/${BUILD_TYPE}_${TOOLCHAIN}/FV/QEMU_EFI.fd firmware.fd
+
+			# QEMU expects 64MiB CODE and VARS files on ARM/AARCH64 architectures
+			# https://github.com/NixOS/nixpkgs/blob/09eb77e94fa25202af8f3e81ddc7353d9970ac1b/pkgs/applications/virtualization/OVMF/default.nix#L198
+			truncate -s 64M firmware.fd
 		;;
 	esac
 }
