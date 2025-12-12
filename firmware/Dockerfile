@@ -7,7 +7,8 @@ FROM docker.io/nixos/nix:latest as builder
 # available in the Nix container, so we need to replace the
 # whole file based on the one that's in the container
 # by default
-RUN bash -c 'echo -e "build-users-group = nixbld\nsandbox = true\ntrusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="' | tee /etc/nix/nix.conf
+RUN bash -c 'echo -e "build-users-group = nixbld\nsandbox = true\ntrusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="' | tee /etc/nix/nix.conf && \
+    cat /etc/nix/nix.conf
 
 COPY . /opt/firmware
 
