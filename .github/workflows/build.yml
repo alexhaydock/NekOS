@@ -4,6 +4,8 @@ name: nekos-build
 on:
   # Run on pushes to any branch
   push:
+  # Allow manual triggers
+  workflow_dispatch:
 
 jobs:
   build_amd64:
