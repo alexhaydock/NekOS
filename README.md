@@ -145,4 +145,4 @@ Current tests:
 * Add more cats!
 
 ## License
-Any code in this repo which is capable of being subject to copyright is licensed as per the LICENSE file in the root of this repository. This doesn't include the images of my cats.
+Any code in this repo which is capable of being subject to copyright is licensed as per the LICENSE file in the root of this repository. This doesn't include the images of my cats. This also does not include the code for the EDK2 firmware build, which is based on [aws/uefi](https://github.com/aws/uefi) and inherits the BSD-2-Clause-Patent license used by AWS.
