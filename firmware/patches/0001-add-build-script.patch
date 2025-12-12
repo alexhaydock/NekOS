@@ -1,9 +1,9 @@
 diff --git a/build.sh b/build.sh
 new file mode 100755
-index 0000000..eda6d4a
+index 0000000..249268b
 --- /dev/null
 +++ b/build.sh
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,86 @@
 +#!/bin/bash
 +#shellcheck disable=all
 +# Copyright 2018-2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -58,6 +58,9 @@ index 0000000..eda6d4a
 +#
 +build_uefi()
 +{
++    # Normalise mtimes for reproducibility
++    find . -type f -exec touch --date=@$SOURCE_DATE_EPOCH {} +
++
 +	echo "      MAKE  BaseTools"
 +	make -C BaseTools
 +	source edksetup.sh
