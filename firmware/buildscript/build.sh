@@ -3,16 +3,6 @@
 # Copyright 2018-2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 set -e -o pipefail
 
-ARCH_TARGET="$1"
-
-# Check parameters
-SUPPORTED_ARCH="arm64 x86"
-if [[ ! " $SUPPORTED_ARCH " =~ .*\ $ARCH_TARGET\ .* ]]; then
-	echo "Usage: $0 <arch>"
-	echo "Supported architectures: ${SUPPORTED_ARCH[@]}"
-	exit 2
-fi
-
 SOURCE="${BASH_SOURCE[0]}"
 # resolve ${SOURCE} until the file is no longer a symlink
 SOURCE="$(readlink -e ${SOURCE})"
@@ -59,28 +49,24 @@ build_uefi()
 	make -C BaseTools
 	source edksetup.sh
 
-	if [ "$ARCH_TARGET" = "x86" ]; then
-		echo "     BUILD  OvmfPkg"
+	defines="${defines} -D SECURE_BOOT_ENABLE=TRUE -D TPM2_ENABLE=TRUE -D QEMU_PV_VARS=TRUE"
+	[ -n "$UEFI_DEBUG" ] && defines="${defines} -DDEBUG_ON_SERIAL_PORT"
 
-		defines="${defines} -D SECURE_BOOT_ENABLE=TRUE -D TPM2_ENABLE=TRUE -D QEMU_PV_VARS=TRUE"
-		[ -n "$UEFI_DEBUG" ] && defines="${defines} -DDEBUG_ON_SERIAL_PORT"
+	arch="$(uname -m)"
+	case "$arch" in
+		"x86_64" | "amd64")
+			echo "     BUILD  OvmfPkg"
 
-		build -a X64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p OvmfPkg/OvmfPkgX64.dsc ${defines}
-		cp Build/OvmfX64/${BUILD_TYPE}_${TOOLCHAIN}/FV/OVMF.fd firmware.fd
+			build -a X64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p OvmfPkg/OvmfPkgX64.dsc ${defines}
+			cp Build/OvmfX64/${BUILD_TYPE}_${TOOLCHAIN}/FV/OVMF.fd firmware.fd
+		;;
+		"aarch64" | "arm64")
+			echo "     BUILD  ArmVirtQemuKernel"
 
-	elif [ "$ARCH_TARGET" = "arm64" ]; then
-		echo "     BUILD  ArmVirtQemuKernel"
-
-		defines="${defines} -D SECURE_BOOT_ENABLE=TRUE -D TPM2_ENABLE=TRUE -D QEMU_PV_VARS=TRUE"
-		[ -n "$UEFI_DEBUG" ] && defines="${defines} -DDEBUG_ON_SERIAL_PORT"
-
-		build -a AARCH64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p ArmVirtPkg/ArmVirtQemuKernel.dsc
-		cp Build/ArmVirtQemuKernel-AARCH64/${BUILD_TYPE}_${TOOLCHAIN}/FV/QEMU_EFI.fd firmware.fd
-
-	else
-		echo "ERROR: Unknown UEFI build target ${ARCH_TARGET}"
-		exit 1
-	fi
+			build -a AARCH64 -t $TOOLCHAIN -b $BUILD_TYPE --hash -p ArmVirtPkg/ArmVirtQemuKernel.dsc
+			cp Build/ArmVirtQemuKernel-AARCH64/${BUILD_TYPE}_${TOOLCHAIN}/FV/QEMU_EFI.fd firmware.fd
+		;;
+	esac
 }
 
 build_uefi
