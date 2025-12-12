@@ -5,7 +5,7 @@
 ./generate_buildscript_patch.sh
 
 # Build with Nix
-if ! command -v nix-build; then
+if ! "$(command -v nix-build)"; then
   echo 'Nix is not installed! Exiting.'
   exit 1
 fi
@@ -20,7 +20,12 @@ arch="$(uname -m)"
 
 case "$arch" in
     "x86_64" | "amd64")
-        echo '01b673bbb8e9bf7770b98fd2e8987c231b14a92367fe5988a975a43594ab25f2  build/firmware.fd' | sha256sum -c || echo 'Build does not match expected checksum!' && exit 2;;
+        if ! "$(echo '01b673bbb8e9bf7770b98fd2e8987c231b14a92367fe5988a975a43594ab25f2  build/firmware.fd' | sha256sum -c)"; then
+          echo 'Build does not match expected checksum!'
+          exit 2
+        else
+          echo 'Build matches expected checksum!'
+        fi
     "aarch64" | "arm64")
         echo 'WIP';;
 esac
