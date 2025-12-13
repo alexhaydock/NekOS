@@ -75,7 +75,7 @@ flowchart LR
 ## Build Instructions
 I don't support this as a general tool, but if you want to base your own project on this then all of the code should be fairly easy to understand, as I've tried to comment it where possible.
 
-To build and test this, you need `podman` and `qemu`.
+To build and test this, you need `podman`, and `qemu`.
 
 Since this makes use of the QEMU [Host UEFI variable service](https://www.qemu.org/docs/master/devel/uefi-vars.html#host-uefi-variable-service), you will need at least QEMU 10 to make full use of this.
 
@@ -116,7 +116,7 @@ The tests will launch QEMU with various elements of our OS loaded/enabled.
 
 Current tests:
 
-| Test | Notes |
+| **Test** | **Notes** |
 |---|---|
 | kernel | Test only kernel. |
 | kernel,serialonly | Test only kernel using only serial output (no VGA). |
@@ -131,6 +131,21 @@ Current tests:
 | fw,kernel,initramfs,uki,sb-pass,virtio | As above, but using a VirtIO GPU rather than the default `stdvga`. |
 | microvm,kernel,initramfs,serialonly | Run the kernel & initramfs as a MicroVM. We only expect text output here. |
 
+## Reproducibility
+
+NekOS is built with the goal of being fully reproducible. With the exception of cryptographic signing keys, all components should be byte-for-byte reproducible.
+
+This is a long-term work in progress, tracked [on this project board](https://github.com/users/alexhaydock/projects/1/views/1).
+
+| **Component** | **Reproducible?** | **Method** | **Notes** |
+|---|---|---|---|
+| Firmware | ✅ | Nix build inside Podman, inspired by [aws/uefi](https://github.com/aws/uefi). | Only reproducible on x86_64 at the moment, but not a huge issue since SEV-SNP is an x86-only feature. |
+| Kernel | ❌ |  | Should be possible, [as per kernel.org](https://www.kernel.org/doc/html/v6.18/kbuild/reproducible-builds.html). |
+| Userland | ❌ |  | This will depend heavily on whether `tinywl` can be built reproducibly. |
+| NekOS UKI | ❌ |  | Reproducibility will need to be considered _before_ signing the UKI for UEFI Secure Boot. |
+| stboot UKI | ❌ |  | Not investigated yet. |
+| stboot OS ZIP | ❌ |  | Not investigated yet. |
+
 ## Future Plans
 * Consider signing UKIs for Secure Boot using a YubiKey as a HSM:
   * https://docs.system-transparency.org/st-1.3.0/docs/how-to/secure-boot/sign-efi-applications/yubikey/
@@ -143,4 +158,4 @@ Current tests:
 * Add more cats!
 
 ## License
-Any code in this repo which is capable of being subject to copyright is licensed as per the LICENSE file in the root of this repository. This doesn't include the images of my cats.
+Any code in this repo which is capable of being subject to copyright is licensed as per the LICENSE file in the root of this repository. This doesn't include the images of my cats. This also does not include the code for the EDK2 firmware build, which is based on [aws/uefi](https://github.com/aws/uefi) and inherits the BSD-2-Clause-Patent license used by AWS.

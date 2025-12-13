@@ -1,104 +1,24 @@
-# Use the Tianocore upstream development container
-# See build.sh for how we build this
-FROM localhost/tianodev:latest as builder
+FROM docker.io/nixos/nix:latest as builder
 
-# Check out edk2 upstream repository using latest release tag
-RUN EDKVER=$(curl -s https://api.github.com/repos/tianocore/edk2/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")') && \
-    git clone --branch "${EDKVER}" --depth 1 https://github.com/tianocore/edk2.git /opt/edk2
-WORKDIR /opt/edk2
-RUN git submodule update --init --recursive --depth 1
-
-# Copy custom logo into the firmware build
+# Re-enable Nix sandbox (requires running with --privileged)
+# Without this, we won't get properly reproducible builds
 #
-# I'm doing this statically now to make reproducible
-# builds easier, but the command used to generate this
-# dynamically before was to run this against the logo
-# from the root of this repo:
-#
-# magick \
-#     /opt/logo.png \
-#     -background black \
-#     -alpha remove \
-#     -define bmp:format=mbp3 \
-#     /opt/edk2/MdeModulePkg/Logo/Logo.bmp
-#
-COPY logo.bmp /opt/edk2/MdeModulePkg/Logo/Logo.bmp
+# Normally I'd use awk/sed for this but we don't have them
+# available in the Nix container, so we need to replace the
+# whole file based on the one that's in the container
+# by default
+RUN bash -c 'echo -e "build-users-group = nixbld\nsandbox = true\ntrusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="' | tee /etc/nix/nix.conf && \
+    cat /etc/nix/nix.conf
 
-# Build OVMF CODE with support for Secure Boot, TPM, and
-# paravirtualised UEFI vars
-# (based on the build() function from the Alpine APKBUILD)
-RUN arch="$(uname -m)" && \
-    case "$arch" in \
-    x86_64 | amd64) \
-      export TARGET_ARCH="X64" && \
-      export PLATFORM="OvmfPkg/OvmfPkgX64.dsc" \
-    ;; \
-    aarch64 | arm64) \
-      export TARGET_ARCH="AARCH64" && \
-      export PLATFORM="ArmVirtPkg/ArmVirtQemu.dsc" \
-    ;; \
-    esac && \
-    export PYTHON_COMMAND=python3 && \
-    export WORKSPACE=/opt/edk2 && \
-    export PACKAGES_PATH=/opt/edk2 && \
-    export EDK_TOOLS_PATH=/opt/edk2/BaseTools/ && \
-    export PATH="/opt/edk2/BaseTools/BinWrappers/PosixLike/:$PATH" && \
-    unset MAKEFLAGS && \
-    bash -c ". edksetup.sh" && \
-    make -C BaseTools && \
-    build -b RELEASE \
-        -a "${TARGET_ARCH}" \
-        -t GCC5 \
-        -p "${PLATFORM}" \
-        -n 2 \
-        -D SECURE_BOOT_ENABLE=TRUE \
-        -D TPM2_ENABLE=TRUE \
-        -D QEMU_PV_VARS=TRUE
+COPY . /opt/firmware
 
-# Copy whichever QEMU file we actually built into /opt
-# For the aarch64 firmware, this is where we take the opportunity to pad
-# the file to 64MB exactly, which is a requirement for aarch64 firmware
-RUN arch="$(uname -m)" && \
-    case "$arch" in \
-    x86_64 | amd64) \
-      cp -fv /opt/edk2/Build/OvmfX64/RELEASE_GCC5/FV/OVMF_CODE.fd /opt/firmware.fd \
-    ;; \
-    aarch64 | arm64) \
-      dd if=/opt/edk2/Build/ArmVirtQemu-AArch64/RELEASE_GCC5/FV/QEMU_EFI.fd of=/opt/firmware.fd conv=notrunc && \
-      truncate -s 64m /opt/firmware.fd \
-    ;; \
-    esac
+# Generate a new patch file from our build script if we've changed it
+WORKDIR /opt/firmware/buildscript
+RUN chmod +x /opt/firmware/build.sh && \
+    git diff --no-index /dev/null build.sh | tee /opt/firmware/patches/0001-add-build-script.patch
 
-# Install virt-fw-vars to create some JSON vars stores
-RUN dnf install -y python3-virt-firmware edk2-ovmf && \
-    dnf clean all
-# Create a blank JSON VARS store so we have something to
-# work with if we don't want Secure Boot validation active
-RUN virt-fw-vars \
-  --output-json /opt/OVMF_VARS_INSECURE.json
-# Create one based on the populated qcow2 VARS store that
-# Fedora ship with their native OVMF build
-#
-# This is lazy and we could do this without relying on the
-# Fedora package, but it involves messing around with Microsoft's
-# certs ourselves
-RUN virt-fw-vars \
-  --input /usr/share/edk2/ovmf/OVMF_VARS_4M.secboot.qcow2 \
-  --output-json /opt/OVMF_VARS_MS.json
-# Build the VARS store that uses our custom Secure Boot keys
-COPY keys/ /opt/keys
-RUN virt-fw-vars \
-  --output-json /opt/OVMF_VARS_CUSTOM.json \
-  --set-pk-cert "$(uuidgen)" /opt/keys/pk-cert.pem \
-  --add-db-cert "$(uuidgen)" /opt/keys/db-cert.pem \
-  --microsoft-db none \
-  --microsoft-kek none \
-  --secure-boot
+# Ensure entrypoint is executable
+RUN chmod +x /opt/firmware/entrypoint.sh
 
-# Final container that just contains our firmware and nothing more
-FROM docker.io/library/alpine:3.23 as final
-COPY --from=builder /opt/firmware.fd /opt/firmware.fd
-COPY --from=builder /opt/OVMF_VARS_INSECURE.json /opt/OVMF_VARS_INSECURE.json
-COPY --from=builder /opt/OVMF_VARS_MS.json /opt/OVMF_VARS_MS.json
-COPY --from=builder /opt/OVMF_VARS_CUSTOM.json /opt/OVMF_VARS_CUSTOM.json
-WORKDIR /opt
+WORKDIR /opt/firmware
+ENTRYPOINT ["/opt/firmware/entrypoint.sh"]

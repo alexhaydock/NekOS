@@ -18,6 +18,14 @@ build_keygen() {
     )
 }
 
+build_efivars() {
+    (
+        cd "$(pwd)/efivars"
+        ./build.sh
+        ci_clean
+    )
+}
+
 build_firmware() {
     (
         cd "$(pwd)/firmware"
@@ -60,6 +68,7 @@ build_stboot() {
 }
 
 time build_keygen   | tee logs/build_keygen.log
+time build_efivars  | tee logs/build_efivars.log
 time build_firmware | tee logs/build_firmware.log
 time build_kernel   | tee logs/build_kernel.log
 time build_userland | tee logs/build_userland.log

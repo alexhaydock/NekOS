@@ -9,7 +9,7 @@
 #   - VirtIO GPU for display (as opposed to standard VGA)
 
 # Copy Secure Boot VARS with our custom keys to temp location
-cp -fv ../firmware/build/OVMF_VARS_CUSTOM.json /tmp/OVMF_VARS_CUSTOM.json
+cp -fv ../efivars/build/OVMF_VARS_CUSTOM.json /tmp/OVMF_VARS_CUSTOM.json
 
 # Configure options based on system arch
 . ./.archconfig

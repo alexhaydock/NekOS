@@ -5,7 +5,7 @@
 #   - Kernel build
 
 # Copy VARS to temp location
-cp -fv ../firmware/build/OVMF_VARS_INSECURE.json /tmp/OVMF_VARS_INSECURE.json
+cp -fv ../efivars/build/OVMF_VARS_INSECURE.json /tmp/OVMF_VARS_INSECURE.json
 
 # Configure options based on system arch
 . ./.archconfig
