@@ -11,6 +11,10 @@ pkgs.stdenv.mkDerivation rec {
   pname = "nekos-firmware";
   version = "edk2-stable202511";
 
+  # Moved here out of build.sh where AWS had it, and converted to
+  # use the epoch directly, rather than calling the `date` command
+  SOURCE_DATE_EPOCH = "1541062800"; # 2018-11-01 09:00:00 UTC
+
   nativeBuildInputs = with pkgs; [
     acpica-tools
     git
@@ -70,6 +74,9 @@ pkgs.stdenv.mkDerivation rec {
 
     # Copy in custom logo
     cp -fv ${customLogo} MdeModulePkg/Logo/Logo.bmp
+
+    # Normalise timestamps for reproducibility
+    find . -type f -exec touch --date=@$SOURCE_DATE_EPOCH {} +
   '';
 
   buildPhase = ''

@@ -25,8 +25,13 @@ export CONF_PATH=''
 export EDK_TOOLS_PATH=''
 export WORKSPACE=''
 
-# Set SOURCE_DATE_EPOCH for reproducible builds (can be overriden)
-export SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-$(date --date='Nov 1 2018 09:00:00' +"%s")}
+# Enforce some locale options for reproducibility
+export LC_ALL=C
+export LANG=C
+export TZ=UTC
+
+# Disable hash randomisation in Python which otherwise breaks reproducibility
+export PYTHONHASHSEED=0
 
 if [ -n "$UEFI_DEBUG" ]; then
 	BUILD_TYPE="DEBUG"
@@ -42,12 +47,15 @@ TOOLCHAIN="GCC5"
 #
 build_uefi()
 {
-	# Normalise mtimes for reproducibility
-	find . -type f -exec touch --date=@$SOURCE_DATE_EPOCH {} +
-
 	echo "      MAKE  BaseTools"
-	make -C BaseTools
+
+	# Call make on BaseTools, with added reproducibilty
+	make -C BaseTools -j1
 	source edksetup.sh
+
+	# Reset some vars after sourcing edksetup.sh for reproducibility
+	export EFI_SOURCE=$PWD
+	export WORKSPACE=$PWD
 
 	# Add options to enforce determinism
 	determinism="-D SORT_COMPONENTS=TRUE -D BUILD_MULTIPLE_THREAD=FALSE -D DISABLE_NEW_DEPRECATED_INTERFACES -D TDX_GUEST_SUPPORTED --no-genfds-multi-thread"

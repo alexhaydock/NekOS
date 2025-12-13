@@ -29,7 +29,8 @@ case "$arch" in
         if ! echo '63421b63966375af0ae5c3b6e0aade310abba34fb96f5dbb4b5f4fe2a4dccbf5  build/firmware.fd' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
-            # TODO: ARM builds are not yet fully reproducible. Not sure why. (It's not the truncate step)
+            # TODO: ARM builds are not yet fully reproducible.
+            # Not sure why. (It's not the truncate step)
             #exit 1
         else
             echo 'Build matches expected checksum!'
