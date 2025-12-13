@@ -135,7 +135,7 @@ Current tests:
 
 NekOS is built with the goal of being fully reproducible. With the exception of cryptographic signing keys, all components should be byte-for-byte reproducible.
 
-This is a long-term work in progress.
+This is a long-term work in progress, tracked [on this project board](https://github.com/users/alexhaydock/projects/1/views/1).
 
 | **Component** | **Reproducible?** | **Method** | **Notes** |
 |---|---|---|---|
