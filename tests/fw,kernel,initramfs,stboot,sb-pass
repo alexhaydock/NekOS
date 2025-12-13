@@ -5,9 +5,10 @@
 #   - Kernel build
 #   - Initramfs build
 #   - UKI build
+#   - Secure Boot (using custom keys, which should pass)
 
-# Copy empty insecure VARS to temp location
-cp -fv ../efivars/build/OVMF_VARS_INSECURE.json /tmp/OVMF_VARS_INSECURE.json
+# Copy Secure Boot VARS with our custom keys to temp location
+cp -fv ../firmware/build/OVMF_VARS_CUSTOM.json /tmp/OVMF_VARS_CUSTOM.json
 
 # Configure options based on system arch
 . ./.archconfig
@@ -23,7 +24,7 @@ ${qemu} \
   -machine ${machine} \
   -kernel ../stboot/build/stboot.uki.signed \
   -drive if=pflash,format=raw,unit=0,file=../firmware/build/firmware.fd,readonly=on \
-  -device ${vartype},jsonfile=/tmp/OVMF_VARS_INSECURE.json \
+  -device ${vartype},jsonfile=/tmp/OVMF_VARS_CUSTOM.json \
   -append "earlyprintk=${console} console=${console}" \
   -serial mon:stdio \
   -display ${display}
