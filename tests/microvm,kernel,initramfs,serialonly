@@ -23,6 +23,6 @@ ${qemu} \
   -machine microvm \
   -kernel ../kernel/build/kernel \
   -initrd ../userland/build/initramfs \
-  -append "earlyprintk=${console} console=${console} reboot=t" \
+  -append "console=${serialconsole} reboot=t" \
   -serial mon:stdio \
   -nodefaults -no-user-config -nographic

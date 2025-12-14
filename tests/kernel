@@ -11,5 +11,5 @@ ${qemu} \
   -cpu host \
   -machine ${machine} \
   -kernel ../kernel/build/kernel \
-  -append "earlyprintk=${console} console=${console}" \
+  -append "console=tty0" \
   -serial mon:stdio

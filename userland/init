@@ -1,37 +1,60 @@
 #!/bin/sh
-
-# DEBUG: Print our filesystem contents before we
-#        mount the virtual filesystems
-#find /
+set -e
 
 # Mount some necessary FHS virtual filesystems
+echo "[NekOS] Mounting /sys"
 mount -t sysfs /sys /sys
+
+echo "[NekOS] Mounting /proc"
 mount -t proc /proc /proc
+
+echo "[NekOS] Mounting /dev"
 mount -t devtmpfs /dev /dev
-mkdir /dev/shm
 
-# Insert the bochs kernel module so that we can actually
-# use the QEMU stdvga output
-#modprobe bochs
-
-# Insert the VirtIO GPU module for VirtIO GPUs on macOS
-#modprobe virtio_gpu
+echo "[NekOS] Creating /dev/shm"
+mkdir -p /dev/shm
 
 # We need to manually source .bashrc I think because we've
 # got bash acting as sh rather than bash
+echo "[NekOS] Sourcing .bashrc"
 source /.bashrc
 
 # Launch seatd so we're ready for tinywl
+echo "[NekOS] Starting seatd"
 seatd&
+
+# Test if we have a display or whether we're just a serial console
+NEKOSDISPLAY="1"
+echo "[NekOS] Discovering whether we have a display or not"
+test -f /sys/class/drm/card0-Virtual-1/modes || NEKOSDISPLAY="0"
+export NEKOSDISPLAY
 
 # This is ugly and will probably break if we change
 # anything about the QEMU environment, but we can read
 # directly out of sysfs and make the (probably unsafe)
 # assumption that the first modesetting option in the
 # list is the one we're actually using
-export WIDTH=$(head -n 1 /sys/class/drm/card0-Virtual-1/modes | cut -d"x" -f1)
-export HEIGHT=$(head -n 1 /sys/class/drm/card0-Virtual-1/modes | cut -d"x" -f2)
+if [ "$NEKOSDISPLAY" = "1" ]; then
+    echo "[NekOS] Discovering display resolution"
+    WIDTH=$(head -n 1 /sys/class/drm/card0-Virtual-1/modes | cut -d"x" -f1)
+    HEIGHT=$(head -n 1 /sys/class/drm/card0-Virtual-1/modes | cut -d"x" -f2)
+    export WIDTH HEIGHT
+    echo "[NekOS] Discovered display resolution: ${WIDTH}x${HEIGHT}"
+fi
 
-# Start our slideshow, sized to fill the screen resolution
-# we've hopefully just discovered correctly
-tinywl -s "exec swayimg -s fit -o random -w ${WIDTH},${HEIGHT} -l /opt/cats/"
+# We use loops here because if /init dies then the kernel will panic
+if [ "$NEKOSDISPLAY" = "1" ]; then
+    while true; do
+        # Start our slideshow, sized to fill the screen resolution
+        # we've hopefully just discovered correctly
+        echo "[NekOS] Starting tinywl"
+        tinywl -s "exec swayimg -s fit -o random -w ${WIDTH},${HEIGHT} -l /opt/cats/"
+        echo "[NekOS] tinywl exited. Returning to shell"
+        exec /bin/sh
+    done
+else
+    while true; do
+        echo "[NekOS] No display detected. Dropping straight to shell"
+        exec /bin/sh
+    done
+fi

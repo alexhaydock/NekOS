@@ -100,7 +100,7 @@ RUN arch="$(uname -m)" && \
 RUN scripts/config --disable MODULES && \
     make olddefconfig
 
-# Standard other reproducibility options
+# Disable a bunch of other flags to make things more reproducible
 RUN scripts/config --disable DEBUG_INFO && \
     scripts/config --disable IKCONFIG && \
     scripts/config --disable IKHEADERS && \
@@ -110,21 +110,10 @@ RUN scripts/config --disable DEBUG_INFO && \
     scripts/config --disable SYSTEM_REVOCATION_KEYS && \
     make olddefconfig
 
-# Ensure we actually have a VT (linux-virt is a bit conservative)
-RUN scripts/config --enable CONFIG_TTY && \
-    scripts/config --enable CONFIG_VT  && \
-    scripts/config --enable CONFIG_VT_CONSOLE && \
-    scripts/config --enable CONFIG_VT_HW_CONSOLE_BINDING && \
-    scripts/config --enable CONFIG_DRM_FBDEV_EMULATION  && \
-    scripts/config --enable CONFIG_FRAMEBUFFER_CONSOLE && \
-    scripts/config --enable CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY && \
-    make olddefconfig
-
-# Enable/configure the things we need for NekOS
-RUN scripts/config --enable CONFIG_DRM_BOCHS && \
-    scripts/config --enable CONFIG_DRM_VIRTIO_GPU  && \
-    scripts/config --enable CONFIG_LOGO && \
+# Enable/configure some tweaks for NekOS
+RUN scripts/config --enable CONFIG_LOGO && \
     scripts/config --set-str LOCALVERSION "-nekos" && \
+    scripts/config --set-str CONFIG_DEFAULT_HOSTNAME "nekos" && \
     make olddefconfig
 
 # Run make olddefconfig again just to make sure
