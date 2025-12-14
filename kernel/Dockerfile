@@ -4,19 +4,13 @@ FROM docker.io/library/alpine:3.23 as kerneldownloader
 # Pin a specific kernel version for reproducibility
 ENV KERNVER="6.18.1"
 
-# Download the Alpine aports tree because we want to use
-# the upstream linux-virt config as our base, and we
-# might as well take the package version from the APKBUILD
-# while we're at it
-RUN apk --no-cache add git
-RUN git clone --depth 1 https://git.alpinelinux.org/aports /opt/aports
-WORKDIR /opt
 # If the kernel version ends in .0 (i.e. just-released LTS)
 # then we truncate it to remove the trailing .0 as that
 # doesn't appear in the upstream URL used by kernel.org
+WORKDIR /opt
 RUN set -x && \
     case $KERNVER in *.0) KERNVER=${KERNVER%??} ;; esac && \
-    echo "Building Linux ${KERNVER}..." && \
+    echo "Downloading Linux ${KERNVER}..." && \
     wget --quiet \
       "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNVER}.tar.xz" \
       -O /opt/kernel.tar.xz && \
@@ -79,18 +73,27 @@ ENV KCFLAGS="-O2 -g -ffile-prefix-map=/opt/linux=. -fdebug-prefix-map=/opt/linux
 # For debug purposes, generate a default config for this kernel and copy it
 # (we immediately overwrite it in the next step with the Alpine config)
 RUN make defconfig && \
-    cp -fv /opt/linux/.config /opt/kernelconfig-default
+    cp -fv /opt/linux/.config /opt/kernelconfig-default && \
+    rm -v .config
 
-# Generate kernel config based on Alpine's upstream virt-lts kernel config
-COPY --from=kerneldownloader /opt/aports/main/linux-lts/virt.aarch64.config /opt/virt.aarch64.config
-COPY --from=kerneldownloader /opt/aports/main/linux-lts/virt.x86_64.config /opt/virt.x86_64.config
+# Add the commit hash of the upstream Alpine aports repo that we're pinning to
+# for fetching the linux-virt kernel config we're going to use as our base
+ENV ALPINE_APORTS_HASH="2723fe77237cedef8130eaf4d3da4ff8ad5b3278"
+
+# Download appropriate Alpine linux-virt kernel config for our arch
+# (and copy it elsewhere before doing further things to it, for debug
+# purposes if we need to do comparisons later)
 RUN arch="$(uname -m)" && \
     case "$arch" in \
     x86_64 | amd64) \
-      cp -fv /opt/virt.x86_64.config /opt/linux/.config \
+      wget --quiet \
+        "https://gitlab.alpinelinux.org/alpine/aports/-/raw/${ALPINE_APORTS_HASH}/main/linux-lts/virt.x86_64.config" \
+        -O /opt/linux/.config \
     ;; \
     aarch64 | arm64) \
-      cp -fv /opt/virt.aarch64.config /opt/linux/.config \
+      wget --quiet \
+        "https://gitlab.alpinelinux.org/alpine/aports/-/raw/${ALPINE_APORTS_HASH}/main/linux-lts/virt.aarch64.config" \
+        -O /opt/linux/.config \
     ;; \
     esac && \
     make olddefconfig && \
