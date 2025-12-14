@@ -12,10 +12,10 @@ mkdir /dev/shm
 
 # Insert the bochs kernel module so that we can actually
 # use the QEMU stdvga output
-modprobe bochs
+#modprobe bochs
 
 # Insert the VirtIO GPU module for VirtIO GPUs on macOS
-modprobe virtio_gpu
+#modprobe virtio_gpu
 
 # We need to manually source .bashrc I think because we've
 # got bash acting as sh rather than bash

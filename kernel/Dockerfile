@@ -76,6 +76,11 @@ ENV LC_ALL=C
 ENV TZ=UTC
 ENV KCFLAGS="-O2 -g -ffile-prefix-map=/opt/linux=. -fdebug-prefix-map=/opt/linux=."
 
+# For debug purposes, generate a default config for this kernel and copy it
+# (we immediately overwrite it in the next step with the Alpine config)
+RUN make defconfig && \
+    cp -fv /opt/linux/.config /opt/kernelconfig-default
+
 # Generate kernel config based on Alpine's upstream virt-lts kernel config
 COPY --from=kerneldownloader /opt/aports/main/linux-lts/virt.aarch64.config /opt/virt.aarch64.config
 COPY --from=kerneldownloader /opt/aports/main/linux-lts/virt.x86_64.config /opt/virt.x86_64.config
@@ -88,7 +93,8 @@ RUN arch="$(uname -m)" && \
       cp -fv /opt/virt.aarch64.config /opt/linux/.config \
     ;; \
     esac && \
-    make olddefconfig
+    make olddefconfig && \
+    cp -fv /opt/linux/.config /opt/kernelconfig-alpine
 
 # Disable modules as a big source of non-determinism
 RUN scripts/config --disable MODULES && \
@@ -104,9 +110,18 @@ RUN scripts/config --disable DEBUG_INFO && \
     scripts/config --disable SYSTEM_REVOCATION_KEYS && \
     make olddefconfig
 
+# Ensure we actually have a VT (linux-virt is a bit conservative)
+RUN scripts/config --enable CONFIG_TTY && \
+    scripts/config --enable CONFIG_VT  && \
+    scripts/config --enable CONFIG_VT_CONSOLE && \
+    scripts/config --enable CONFIG_VT_HW_CONSOLE_BINDING && \
+    scripts/config --enable CONFIG_DRM_FBDEV_EMULATION  && \
+    scripts/config --enable CONFIG_FRAMEBUFFER_CONSOLE && \
+    scripts/config --enable CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY && \
+    make olddefconfig
+
 # Enable/configure the things we need for NekOS
 RUN scripts/config --enable CONFIG_DRM_BOCHS && \
-    scripts/config --enable CONFIG_DRM_FBDEV_EMULATION && \
     scripts/config --enable CONFIG_DRM_VIRTIO_GPU  && \
     scripts/config --enable CONFIG_LOGO && \
     scripts/config --set-str LOCALVERSION "-nekos" && \
@@ -114,38 +129,33 @@ RUN scripts/config --enable CONFIG_DRM_BOCHS && \
 
 # Run make olddefconfig again just to make sure
 # See: https://github.com/NixOS/nixpkgs/blob/09eb77e94fa25202af8f3e81ddc7353d9970ac1b/pkgs/os-specific/linux/kernel/generate-config.pl#L128-L132
-RUN make olddefconfig
+RUN make olddefconfig && \
+    cp -fv /opt/linux/.config /opt/kernelconfig-nekos
 
-# Build kernel (reproducibly)
-RUN make -j1 KCFLAGS="$KCFLAGS"
-
-# # Install modules into directory
-# RUN mkdir -p /opt/mod/lib/modules && \
-#     make -j1 \
-#       INSTALL_MOD_PATH="/opt/mod" \
-#       INSTALL_MOD_STRIP=1 \
-#       KCFLAGS="$KCFLAGS" \
-#       modules_install
-
-# Copy whichever kernel file we actually built into /opt
+# Build kernel target (reproducibly)
 RUN arch="$(uname -m)" && \
     case "$arch" in \
     x86_64 | amd64) \
+      make -j1 KCFLAGS="$KCFLAGS" bzImage && \
       cp -fv /opt/linux/arch/x86/boot/bzImage /opt/kernel \
     ;; \
     aarch64 | arm64) \
+      make -j1 KCFLAGS="$KCFLAGS" Image && \
       cp -fv /opt/linux/arch/arm64/boot/Image /opt/kernel \
     ;; \
     esac
 
-# Final container that just contains our kernel and nothing more
+# Final container that just contains our kernel and configs
 FROM docker.io/library/alpine:3.23 as final
 COPY --from=kernelbuilder /opt/kernel /opt/kernel
-# COPY --from=kernelbuilder /opt/mod /opt/mod
+COPY --from=kernelbuilder /opt/kernelconfig-alpine /opt/kernelconfig-alpine
+COPY --from=kernelbuilder /opt/kernelconfig-default /opt/kernelconfig-default
+COPY --from=kernelbuilder /opt/kernelconfig-nekos /opt/kernelconfig-nekos
 WORKDIR /opt
 
 # Verify reproducibility for debug purposes
-RUN sha256sum /opt/kernel
-# RUN find /opt/mod -type f -print0 \
-#       | sort -z \
-#       | xargs -0 sha256sum
+RUN sha256sum \
+      /opt/kernel \
+      /opt/kernelconfig-alpine \
+      /opt/kernelconfig-default \
+      /opt/kernelconfig-nekos

@@ -18,6 +18,10 @@ jobs:
       - name: Free up GitHub runner space
         run: ./.github/gh-action-free-space.sh
 
+      # Move Podman storage to /mnt so we're not filling up the runner
+      - name: Configure Podman storage location
+        run: ./.github/podman-move-storage.sh
+
       # We can't run Podman-in-Podman directly in GitHub Actions
       # so we need to use this community-maintained action
       - name: Emulate Docker CLI with Podman
@@ -44,6 +48,10 @@ jobs:
 
       - name: Free up GitHub runner space
         run: ./.github/gh-action-free-space.sh
+
+      # Move Podman storage to /mnt so we're not filling up the runner
+      - name: Configure Podman storage location
+        run: ./.github/podman-move-storage.sh
 
       # We can't run Podman-in-Podman directly in GitHub Actions
       # so we need to use this community-maintained action

@@ -223,9 +223,6 @@ RUN apk --no-cache add cpio
 RUN mkdir -p /opt/userland
 COPY --from=busybuild /opt/userland /opt/userland
 
-# Copy in our kernel modules from our kernel build container
-COPY --from=localhost/kb:latest /opt/mod/lib/modules /opt/userland/lib/modules
-
 # Enter our BusyBox dir and pack our compressed initramfs
 #
 # Pipe through `sort -z `first to deterministically sort file output
