@@ -30,7 +30,6 @@ case "$arch" in
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
             # TODO: ARM builds are not yet fully reproducible.
-            # Not sure why. (It's not the truncate step)
             #exit 1
         else
             echo 'Build matches expected checksum!'
