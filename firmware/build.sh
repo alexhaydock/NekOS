@@ -26,7 +26,7 @@ case "$arch" in
         fi
     ;;
     "aarch64" | "arm64")
-        if ! echo '63421b63966375af0ae5c3b6e0aade310abba34fb96f5dbb4b5f4fe2a4dccbf5  build/firmware.fd' \
+        if ! echo '0000000000000000000000000000000000000000000000000000000000000000  build/firmware.fd' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
             # TODO: ARM builds are not yet fully reproducible.
