@@ -12,11 +12,6 @@ RUN bash -c 'echo -e "build-users-group = nixbld\nsandbox = true\ntrusted-public
 
 COPY . /opt/nixbuild
 
-# Generate a new patch file from our build script if we've changed it
-WORKDIR /opt/nixbuild/buildscript
-RUN chmod +x /opt/nixbuild/build.sh && \
-    git diff --no-index /dev/null build.sh | tee /opt/nixbuild/patches/0001-add-build-script.patch
-
 # Ensure entrypoint is executable
 RUN chmod +x /opt/nixbuild/entrypoint.sh
 

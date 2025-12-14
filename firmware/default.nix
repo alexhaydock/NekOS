@@ -7,6 +7,7 @@
     sha256 = "sha256:1zn1lsafn62sz6azx6j735fh4vwwghj8cc9x91g5sx2nrg23ap9k";
   }) {}
 }:
+
 pkgs.stdenv.mkDerivation rec {
   pname = "nekos-firmware";
   version = "edk2-stable202511";

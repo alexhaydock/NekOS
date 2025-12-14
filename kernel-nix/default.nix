@@ -1,4 +1,9 @@
-{ pkgs ? import <nixpkgs> {} }:
+{
+  pkgs ? import (fetchTarball {
+    url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/25.11.tar.gz";
+    sha256 = "sha256:1zn1lsafn62sz6azx6j735fh4vwwghj8cc9x91g5sx2nrg23ap9k";
+  }) {}
+}:
 
 let
   version = "6.18.1";
@@ -25,52 +30,54 @@ pkgs.stdenv.mkDerivation {
     perl
     openssl
     elfutils
+    xz
   ];
 
   # Reproducibility
-  SOURCE_DATE_EPOCH = "0";
-  KBUILD_BUILD_TIMESTAMP = "1970-01-01 00:00:00 UTC";
-  KBUILD_BUILD_USER = "builder";
-  KBUILD_BUILD_HOST = "nekos";
-  KBUILD_BUILD_VERSION = "1";
-  LANG = "C";
-  LC_ALL = "C";
-  TZ = "UTC";
-  NIX_CFLAGS_COMPILE = "-O2 -fno-plt -fno-ident";
-  NIX_LDFLAGS = "";
+  KBUILD_BUILD_TIMESTAMP="1970-01-01 00:00:00 UTC";
+  KBUILD_BUILD_USER="builder";
+  KBUILD_BUILD_HOST="nekos";
+  SOURCE_DATE_EPOCH=0;
+  KBUILD_ABS_SRCTREE=0;
+  GZIP="-n";
+  XZ_DEFAULTS="--threads=1 --no-adjust";
+  LANG="C";
+  LC_ALL="C";
+  TZ="UTC";
+  KCFLAGS = "-O2 -g -ffile-prefix-map=${src}=. -fdebug-prefix-map=${src}=.";
 
   configurePhase = ''
     runHook preConfigure
 
-    # Patch shebangs in scripts so they run under Nix
+    # Patch shebangs in config scripts so they run under Nix
     patchShebangs scripts/config
 
     # Import and configure Alpine's linux-virt config
     cp ${x86Config} .config
     make olddefconfig
 
-    # Disable modules as a big source of non-determinism
+    # Disable kernel modules for reproducibility's sake
     scripts/config --disable MODULES
+    make olddefconfig
 
-    # Standard other reproducibility options
+    # Disable a bunch of other flags that might impact reproducibility
     scripts/config --disable DEBUG_INFO
+    scripts/config --disable GCC_PLUGINS
     scripts/config --disable IKCONFIG
     scripts/config --disable IKHEADERS
     scripts/config --disable STACK_VALIDATION
-    scripts/config --disable GCC_PLUGINS
-    scripts/config --disable SYSTEM_TRUSTED_KEYS
     scripts/config --disable SYSTEM_REVOCATION_KEYS
-
-    # Enable/configure the things we need for NekOS
-    scripts/config --enable CONFIG_DRM_BOCHS
-    scripts/config --enable CONFIG_DRM_FBDEV_EMULATION
-    scripts/config --enable CONFIG_DRM_VIRTIO_GPU 
-    scripts/config --enable CONFIG_LOGO
-    scripts/config --set-str LOCALVERSION "-nekos"
-
-    # Run olddefconfig again, and do it twice, just
-    # to be extra sure of consistency
+    scripts/config --disable SYSTEM_TRUSTED_KEYS
     make olddefconfig
+
+    # Enable/configure some tweaks for NekOS
+    scripts/config --enable CONFIG_LOGO
+    scripts/config --set-str CONFIG_DEFAULT_HOSTNAME "nekos"
+    scripts/config --set-str LOCALVERSION "-nekos"
+    make olddefconfig
+
+    # Run make olddefconfig again just to make sure
+    # See: https://github.com/NixOS/nixpkgs/blob/09eb77e94fa25202af8f3e81ddc7353d9970ac1b/pkgs/os-specific/linux/kernel/generate-config.pl#L128-L132
     make olddefconfig
 
     runHook postConfigure
@@ -80,8 +87,9 @@ pkgs.stdenv.mkDerivation {
     runHook preBuild
 
     make \
-      -j$NIX_BUILD_CORES \
+      -j1 \
       V=0 \
+      KCFLAGS="$KCFLAGS" \
       bzImage
 
     runHook postBuild
@@ -89,8 +97,10 @@ pkgs.stdenv.mkDerivation {
 
   installPhase = ''
     runHook preInstall
+
     mkdir -p $out
     cp arch/x86/boot/bzImage $out/vmlinuz
+
     runHook postInstall
   '';
 

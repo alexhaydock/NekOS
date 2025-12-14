@@ -105,18 +105,18 @@ RUN scripts/config --disable MODULES && \
 
 # Disable a bunch of other flags to make things more reproducible
 RUN scripts/config --disable DEBUG_INFO && \
+    scripts/config --disable GCC_PLUGINS && \
     scripts/config --disable IKCONFIG && \
     scripts/config --disable IKHEADERS && \
     scripts/config --disable STACK_VALIDATION && \
-    scripts/config --disable GCC_PLUGINS && \
-    scripts/config --disable SYSTEM_TRUSTED_KEYS && \
     scripts/config --disable SYSTEM_REVOCATION_KEYS && \
+    scripts/config --disable SYSTEM_TRUSTED_KEYS && \
     make olddefconfig
 
 # Enable/configure some tweaks for NekOS
 RUN scripts/config --enable CONFIG_LOGO && \
-    scripts/config --set-str LOCALVERSION "-nekos" && \
     scripts/config --set-str CONFIG_DEFAULT_HOSTNAME "nekos" && \
+    scripts/config --set-str LOCALVERSION "-nekos" && \
     make olddefconfig
 
 # Run make olddefconfig again just to make sure
