@@ -7,7 +7,7 @@ sudo tee /etc/containers/storage.conf <<'EOF'
 [storage]
 driver = "overlay"
 graphroot = "/mnt/podman"
-runroot = "/run/containers/storage"
+runroot = "/mnt/podman/runroot"
 EOF
 
 sudo podman info --debug | grep -E 'graphRoot|runRoot'
