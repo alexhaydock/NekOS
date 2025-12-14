@@ -90,25 +90,42 @@ RUN arch="$(uname -m)" && \
     esac && \
     make olddefconfig
 
-# Copy in kernel config fragments file to apply our own kernel config options
-COPY features.config /opt/linux/features.config
-RUN scripts/kconfig/merge_config.sh .config features.config
-
-# Run make olddefconfig again a few times just to make sure
-# See: https://github.com/NixOS/nixpkgs/blob/09eb77e94fa25202af8f3e81ddc7353d9970ac1b/pkgs/os-specific/linux/kernel/generate-config.pl#L128-L132
-RUN make olddefconfig && \
+# Disable modules as a big source of non-determinism
+RUN scripts/config --disable MODULES && \
     make olddefconfig
+
+# Standard other reproducibility options
+RUN scripts/config --disable DEBUG_INFO && \
+    scripts/config --disable IKCONFIG && \
+    scripts/config --disable IKHEADERS && \
+    scripts/config --disable STACK_VALIDATION && \
+    scripts/config --disable GCC_PLUGINS && \
+    scripts/config --disable SYSTEM_TRUSTED_KEYS && \
+    scripts/config --disable SYSTEM_REVOCATION_KEYS && \
+    make olddefconfig
+
+# Enable/configure the things we need for NekOS
+RUN scripts/config --enable CONFIG_DRM_BOCHS && \
+    scripts/config --enable CONFIG_DRM_FBDEV_EMULATION && \
+    scripts/config --enable CONFIG_DRM_VIRTIO_GPU  && \
+    scripts/config --enable CONFIG_LOGO && \
+    scripts/config --set-str LOCALVERSION "-nekos" && \
+    make olddefconfig
+
+# Run make olddefconfig again just to make sure
+# See: https://github.com/NixOS/nixpkgs/blob/09eb77e94fa25202af8f3e81ddc7353d9970ac1b/pkgs/os-specific/linux/kernel/generate-config.pl#L128-L132
+RUN make olddefconfig
 
 # Build kernel (reproducibly)
 RUN make -j1 KCFLAGS="$KCFLAGS"
 
-# Install modules into directory
-RUN mkdir -p /opt/mod/lib/modules && \
-    make -j1 \
-      INSTALL_MOD_PATH="/opt/mod" \
-      INSTALL_MOD_STRIP=1 \
-      KCFLAGS="$KCFLAGS" \
-      modules_install
+# # Install modules into directory
+# RUN mkdir -p /opt/mod/lib/modules && \
+#     make -j1 \
+#       INSTALL_MOD_PATH="/opt/mod" \
+#       INSTALL_MOD_STRIP=1 \
+#       KCFLAGS="$KCFLAGS" \
+#       modules_install
 
 # Copy whichever kernel file we actually built into /opt
 RUN arch="$(uname -m)" && \
@@ -124,11 +141,11 @@ RUN arch="$(uname -m)" && \
 # Final container that just contains our kernel and nothing more
 FROM docker.io/library/alpine:3.23 as final
 COPY --from=kernelbuilder /opt/kernel /opt/kernel
-COPY --from=kernelbuilder /opt/mod /opt/mod
+# COPY --from=kernelbuilder /opt/mod /opt/mod
 WORKDIR /opt
 
 # Verify reproducibility for debug purposes
-RUN sha256sum /opt/kernel && \
-    find /opt/mod -type f -print0 \
-      | sort -z \
-      | xargs -0 sha256sum
+RUN sha256sum /opt/kernel
+# RUN find /opt/mod -type f -print0 \
+#       | sort -z \
+#       | xargs -0 sha256sum
