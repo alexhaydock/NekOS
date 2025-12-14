@@ -2,8 +2,7 @@
   pkgs ? import (fetchTarball {
     url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/25.11.tar.gz";
     sha256 = "sha256:1zn1lsafn62sz6azx6j735fh4vwwghj8cc9x91g5sx2nrg23ap9k";
-  }) {}
-}:
+  }) {} , system ? pkgs.stdenv.hostPlatform.system }:
 
 let
   version = "6.18.1";
@@ -17,11 +16,34 @@ let
     url = "https://gitlab.alpinelinux.org/alpine/aports/-/raw/fbcf0dfbf88d6089620716343684b96d4d034431/main/linux-lts/virt.x86_64.config";
     sha256 = "sha256-zTbB0APDgSSdbbq1UpyrDx2XNrpIyRhW/6n5czc+VDg=";
   };
+
+  aarch64Config = pkgs.fetchurl {
+    url = "https://gitlab.alpinelinux.org/alpine/aports/-/raw/fbcf0dfbf88d6089620716343684b96d4d034431/main/linux-lts/virt.aarch64.config";
+    sha256 = "sha256-LvDuCwlba3sv2f+FcXdgmWK+xx0tkHIY2rWj7DgzUUw=";
+  };
+
+  kernelConfig = if system == "x86_64-linux" then x86Config else aarch64Config;
 in
 
 pkgs.stdenv.mkDerivation {
   pname = "nekos-kernel";
-  inherit version src x86Config;
+  inherit version src;
+
+  # Reproducibility
+  #
+  # We no longer set SOURCE_DATE_EPOCH here as Nix sets it automatically based on the
+  # most recent mtime of the files in the source root, which should always be deterministic
+  # for the same pinned kernel source tarball
+  KBUILD_BUILD_TIMESTAMP = "1970-01-01 00:00:00 UTC";
+  KBUILD_BUILD_USER = "builder";
+  KBUILD_BUILD_HOST = "nekos";
+  KBUILD_ABS_SRCTREE = "0";
+  GZIP = "-n";
+  XZ_DEFAULTS = "--threads=1 --no-adjust";
+  LANG = "C";
+  LC_ALL = "C";
+  TZ = "UTC";
+  KCFLAGS = "-O2 -g -ffile-prefix-map=${src}=. -fdebug-prefix-map=${src}=.";
 
   nativeBuildInputs = with pkgs; [
     bc
@@ -33,27 +55,14 @@ pkgs.stdenv.mkDerivation {
     xz
   ];
 
-  # Reproducibility
-  KBUILD_BUILD_TIMESTAMP="1970-01-01 00:00:00 UTC";
-  KBUILD_BUILD_USER="builder";
-  KBUILD_BUILD_HOST="nekos";
-  SOURCE_DATE_EPOCH=0;
-  KBUILD_ABS_SRCTREE=0;
-  GZIP="-n";
-  XZ_DEFAULTS="--threads=1 --no-adjust";
-  LANG="C";
-  LC_ALL="C";
-  TZ="UTC";
-  KCFLAGS = "-O2 -g -ffile-prefix-map=${src}=. -fdebug-prefix-map=${src}=.";
-
   configurePhase = ''
     runHook preConfigure
 
     # Patch shebangs in config scripts so they run under Nix
     patchShebangs scripts/config
 
-    # Import and configure Alpine's linux-virt config
-    cp ${x86Config} .config
+    # Import and configure Alpine's linux-virt config based on our arch
+    cp -fv ${kernelConfig} .config
     make olddefconfig
 
     # Disable kernel modules for reproducibility's sake
@@ -86,11 +95,15 @@ pkgs.stdenv.mkDerivation {
   buildPhase = ''
     runHook preBuild
 
-    make \
-      -j1 \
-      V=0 \
-      KCFLAGS="$KCFLAGS" \
-      bzImage
+    # Build appropriate kernel type based on our architecture
+    case "${system}" in
+      x86_64-linux)
+        make -j1 V=0 KCFLAGS="$KCFLAGS" bzImage
+      ;;
+      aarch64-linux)
+        make -j1 V=0 KCFLAGS="$KCFLAGS" Image
+      ;;
+    esac
 
     runHook postBuild
   '';
@@ -98,8 +111,18 @@ pkgs.stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
 
+    # Create output dir
     mkdir -p $out
-    cp arch/x86/boot/bzImage $out/vmlinuz
+
+    # Copy appropriate kernel type based on our architecture
+    case "${system}" in
+      x86_64-linux)
+        cp -fv arch/x86/boot/bzImage $out/kernel
+      ;;
+      aarch64-linux)
+        cp -fv arch/arm64/boot/Image $out/kernel
+      ;;
+    esac
 
     runHook postInstall
   '';

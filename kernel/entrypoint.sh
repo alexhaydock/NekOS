@@ -5,7 +5,7 @@ set -euo pipefail
 nix-build --pure --option sandbox true --cores 1
 
 # Hash output
-sha256sum /opt/nixbuild/result/vmlinuz
+sha256sum /opt/nixbuild/result/kernel
 
 # Copy output to mapped volume
-cp -fv /opt/nixbuild/result/vmlinuz /opt/out/vmlinuz
+cp -fv /opt/nixbuild/result/kernel /opt/out/kernel
