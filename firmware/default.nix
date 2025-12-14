@@ -12,8 +12,9 @@ pkgs.stdenv.mkDerivation rec {
   pname = "nekos-firmware";
   version = "edk2-stable202511";
 
-  # We no longer set SOURCE_DATE_EPOCH here as Nix sets it automatically based on the
-  # most recent mtime of the files in the source root
+  # Moved here out of build.sh where AWS had it, and converted to
+  # use the epoch directly, rather than calling the `date` command
+  SOURCE_DATE_EPOCH = "1541062800"; # 2018-11-01 09:00:00 UTC
 
   nativeBuildInputs = with pkgs; [
     acpica-tools
