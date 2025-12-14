@@ -13,4 +13,4 @@ EOF
 
 sudo podman info --debug | grep -E 'graphRoot|runRoot'
 
-sudo chown -R "${RUNNER_USER}":"${RUNNER_USER}" /mnt/podman
+sudo chown -cR "${USER}":"${USER}" /mnt/podman
