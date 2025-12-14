@@ -12,11 +12,11 @@ jobs:
     name: Build NekOS (x86_64)
     runs-on: ubuntu-24.04
     steps:
-      - name: Free up GitHub runner space
-        run: ./.gh-action-free-space.sh
-
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Free up GitHub runner space
+        run: ./.github/gh-action-free-space.sh
 
       # We can't run Podman-in-Podman directly in GitHub Actions
       # so we need to use this community-maintained action
@@ -39,11 +39,11 @@ jobs:
     name: Build NekOS (aarch64)
     runs-on: ubuntu-24.04-arm
     steps:
-      - name: Free up GitHub runner space
-        run: ./.gh-action-free-space.sh
-
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Free up GitHub runner space
+        run: ./.github/gh-action-free-space.sh
 
       # We can't run Podman-in-Podman directly in GitHub Actions
       # so we need to use this community-maintained action
