@@ -129,4 +129,6 @@ WORKDIR /opt
 
 # Verify reproducibility for debug purposes
 RUN sha256sum /opt/kernel && \
-    sha256sum -r /opt/mod/*
+    find /opt/mod -type f -print0 \
+      | sort -z \
+      | xargs -0 sha256sum

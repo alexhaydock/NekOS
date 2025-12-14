@@ -1,6 +1,14 @@
 # Container to build BusyBox
 FROM docker.io/library/alpine:3.23 as busybuild
 
+# Determinism
+ENV SOURCE_DATE_EPOCH=0
+ENV LANG=C
+ENV LC_ALL=C
+ENV TZ=UTC
+ENV CFLAGS="-O2 -g0 -ffile-prefix-map=/opt=/usr/src"
+ENV LDFLAGS="-Wl,--build-id=none"
+
 # See: https://github.com/tianon/dockerfiles/blob/master/toybox/Dockerfile
 RUN apk --no-cache add \
     bash \
@@ -74,13 +82,6 @@ RUN make install
 # Add our init script
 COPY init /opt/userland/init
 RUN chmod +x /opt/userland/init
-
-# Container to build wlroots as our graphical compositor
-FROM docker.io/library/alpine:3.23 as wlroots
-
-# Copy our BusyBox build so far
-RUN mkdir -p /opt/userland
-COPY --from=busybuild /opt/userland /opt/userland
 
 # Discover the version of wlroots that this release of Alpine is shipping
 # (lazily, by installing the package)
@@ -220,18 +221,24 @@ RUN apk --no-cache add cpio
 
 # Copy our BusyBox build so far
 RUN mkdir -p /opt/userland
-COPY --from=wlroots /opt/userland /opt/userland
+COPY --from=busybuild /opt/userland /opt/userland
 
 # Copy in our kernel modules from our kernel build container
 COPY --from=localhost/kb:latest /opt/mod/lib/modules /opt/userland/lib/modules
 
 # Enter our BusyBox dir and pack our compressed initramfs
+#
+# Pipe through `sort -z `first to deterministically sort file output
+# to help with reproducibility
+#
+# Also run gzip with the -n flag to avoid embedding timestamps
 WORKDIR /opt/userland
 RUN apk --no-cache add findutils && \
-    find . -print0 | cpio --null -o --format=newc | gzip -9 > ../initramfs && \
+    find . -print0 | sort -z | cpio --null -o --format=newc > /opt/initramfs.cpio && \
+    gzip -n < /opt/initramfs.cpio > /opt/initramfs && \
     find . -type f -printf '%s %p\n' | sort -nr > /opt/initramfs.txt
 
-# Final container that just contains our initramfs and nothing more
+# Final container that just contains our gzipped initramfs and nothing more
 FROM docker.io/library/alpine:3.23 as final
 COPY --from=initramfs /opt/initramfs /opt/initramfs
 COPY --from=initramfs /opt/initramfs.txt /opt/initramfs.txt
