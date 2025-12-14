@@ -91,15 +91,14 @@ pkgs.stdenv.mkDerivation rec {
   '';
 
   installPhase = ''
-    mkdir $out
-    cp firmware.fd $out/firmware.fd
+    mkdir -p $out
+    cp -fv firmware.fd $out/firmware.fd
   '';
 
   dontPatchELF = true;
 
   meta = {
-    description = "UEFI edk2 for NekOS";
+    description = "NekOS Firmware";
     homepage = "https://github.com/alexhaydock/NekOS/tree/main/firmware";
-    license = "bsd";
   };
 }

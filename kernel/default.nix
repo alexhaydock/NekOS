@@ -129,4 +129,9 @@ pkgs.stdenv.mkDerivation {
 
   dontStrip = true;
   enableParallelBuilding = true;
+
+  meta = {
+    description = "NekOS Kernel";
+    homepage = "https://github.com/alexhaydock/NekOS/tree/main/kernel";
+  };
 }
