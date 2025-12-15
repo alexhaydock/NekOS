@@ -134,6 +134,10 @@ pkgs.stdenv.mkDerivation {
       ;;
     esac
 
+    # Copy the final config we used for this kernel build so we
+    # can keep it to track the differences over time
+    cp -fv .config $out/kernelconfig-nekos
+
     runHook postInstall
   '';
 
