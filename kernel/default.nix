@@ -85,6 +85,16 @@ pkgs.stdenv.mkDerivation {
     scripts/config --set-str LOCALVERSION "-nekos"
     make olddefconfig
 
+    # If we're running aarch64, disable CRYPTO_AEGIS128_SIMD
+    # to avoid build failures on the default ARM-based GitHub runners
+    #
+    # https://github.com/NixOS/nixpkgs/blob/6812bcfd614abedbdb3f68d7b6554eda6ca3e014/pkgs/os-specific/linux/kernel/common-config.nix#L1458-L1459
+    case "${system}" in
+      aarch64-linux)
+        scripts/config --disable CRYPTO_AEGIS128_SIMD
+      ;;
+    esac
+
     # Run make olddefconfig again just to make sure
     # See: https://github.com/NixOS/nixpkgs/blob/09eb77e94fa25202af8f3e81ddc7353d9970ac1b/pkgs/os-specific/linux/kernel/generate-config.pl#L128-L132
     make olddefconfig

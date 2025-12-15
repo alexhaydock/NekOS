@@ -140,7 +140,7 @@ This is a long-term work in progress, tracked [on this project board](https://gi
 | **Component** | **Reproducible?** | **Method** | **Notes** |
 |---|---|---|---|
 | Firmware | ✅ | Nix build inside Podman, inspired by [aws/uefi](https://github.com/aws/uefi). | Only reproducible on x86_64 at the moment, but not a huge issue since SEV-SNP is an x86-only feature. |
-| Kernel | ❌ |  | Should be possible, [as per kernel.org](https://www.kernel.org/doc/html/v6.18/kbuild/reproducible-builds.html). |
+| Kernel | ✅ | Nix build inside Podman. See [kernel docs on reproducible builds](https://www.kernel.org/doc/html/v6.18/kbuild/reproducible-builds.html). | Only reproducible on x86_64 at the moment. |
 | Userland | ❌ |  | This will depend heavily on whether `tinywl` can be built reproducibly. |
 | NekOS UKI | ❌ |  | Reproducibility will need to be considered _before_ signing the UKI for UEFI Secure Boot. |
 | stboot UKI | ❌ |  | Not investigated yet. |
