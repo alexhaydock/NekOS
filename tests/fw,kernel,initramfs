@@ -20,6 +20,6 @@ ${qemu} \
   -initrd ../userland/build/initramfs \
   -drive if=pflash,format=raw,unit=0,file=../firmware/build/firmware.fd,readonly=on \
   -device ${vartype},jsonfile=/tmp/OVMF_VARS_INSECURE.json \
-  -append "earlyprintk=${console} console=${console}" \
+  -append "console=tty0" \
   -serial mon:stdio \
   -display ${display}

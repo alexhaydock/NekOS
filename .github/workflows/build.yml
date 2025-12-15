@@ -15,6 +15,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Free up GitHub runner space
+        run: ./.github/gh-action-free-space.sh
+
       # We can't run Podman-in-Podman directly in GitHub Actions
       # so we need to use this community-maintained action
       - name: Emulate Docker CLI with Podman
@@ -38,6 +41,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Free up GitHub runner space
+        run: ./.github/gh-action-free-space.sh
 
       # We can't run Podman-in-Podman directly in GitHub Actions
       # so we need to use this community-maintained action

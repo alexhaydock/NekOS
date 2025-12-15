@@ -28,7 +28,7 @@ ${qemu} \
   -kernel ../uki/build/uki.efi \
   -drive if=pflash,format=raw,unit=0,file=../firmware/build/firmware.fd,readonly=on \
   -device ${vartype},jsonfile=/tmp/OVMF_VARS_CUSTOM.json \
-  -append "earlyprintk=${console} console=${console}" \
+  -append "console=tty0" \
   -serial mon:stdio \
   -vga none \
   -device ${virtiogpu},xres=1280,yres=800 \

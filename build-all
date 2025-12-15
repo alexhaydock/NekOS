@@ -38,8 +38,7 @@ build_kernel() {
     (
         cd "$(pwd)/kernel"
         ./build.sh
-        # We do not clean between kernel and userland build, since we
-        # use the contents of the kernel container in the userland step
+        ci_clean
     )
 }
 

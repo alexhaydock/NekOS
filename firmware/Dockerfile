@@ -10,15 +10,15 @@ FROM docker.io/nixos/nix:latest as builder
 RUN bash -c 'echo -e "build-users-group = nixbld\nsandbox = true\ntrusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="' | tee /etc/nix/nix.conf && \
     cat /etc/nix/nix.conf
 
-COPY . /opt/firmware
+COPY . /opt/nixbuild
 
 # Generate a new patch file from our build script if we've changed it
-WORKDIR /opt/firmware/buildscript
-RUN chmod +x /opt/firmware/build.sh && \
-    git diff --no-index /dev/null build.sh | tee /opt/firmware/patches/0001-add-build-script.patch
+WORKDIR /opt/nixbuild/buildscript
+RUN chmod +x /opt/nixbuild/build.sh && \
+    git diff --no-index /dev/null build.sh | tee /opt/nixbuild/patches/0001-add-build-script.patch
 
 # Ensure entrypoint is executable
-RUN chmod +x /opt/firmware/entrypoint.sh
+RUN chmod +x /opt/nixbuild/entrypoint.sh
 
-WORKDIR /opt/firmware
-ENTRYPOINT ["/opt/firmware/entrypoint.sh"]
+WORKDIR /opt/nixbuild
+ENTRYPOINT ["/opt/nixbuild/entrypoint.sh"]
