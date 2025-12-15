@@ -26,11 +26,10 @@ case "$arch" in
         fi
     ;;
     "aarch64" | "arm64")
-        if ! echo '0000000000000000000000000000000000000000000000000000000000000000  build/kernel' \
+        if ! echo '140ca5121afae94336938fe2ac2e1e5dbeefd6181ec8572b12f82f663f7e475e  build/kernel' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
-            # TODO: ARM builds are not yet fully reproducible.
-            #exit 1
+            exit 1
         else
             echo 'Build matches expected checksum!'
         fi
