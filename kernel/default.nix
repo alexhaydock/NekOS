@@ -80,8 +80,8 @@ pkgs.stdenv.mkDerivation {
     make olddefconfig
 
     # Enable/configure some tweaks for NekOS
-    scripts/config --enable CONFIG_LOGO
-    scripts/config --set-str CONFIG_DEFAULT_HOSTNAME "nekos"
+    scripts/config --enable LOGO
+    scripts/config --set-str DEFAULT_HOSTNAME "nekos"
     scripts/config --set-str LOCALVERSION "-nekos"
     make olddefconfig
 
