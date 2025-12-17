@@ -32,7 +32,7 @@ case "$arch" in
         fi
     ;;
     "aarch64" | "arm64")
-        if ! echo '140ca5121afae94336938fe2ac2e1e5dbeefd6181ec8572b12f82f663f7e475e  build/kernel' \
+        if ! echo '60a061834a7ece47243511fe5e44c3ab0488f7fa2df6efd005bf4ffbcda3a762  build/kernel' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
             exit 1
