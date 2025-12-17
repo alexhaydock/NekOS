@@ -1,9 +1,11 @@
+# Import pinned Nixpkgs
 {
   pkgs ? import (fetchTarball {
     url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/25.11.tar.gz";
     sha256 = "sha256:1zn1lsafn62sz6azx6j735fh4vwwghj8cc9x91g5sx2nrg23ap9k";
   }) {} , system ? pkgs.stdenv.hostPlatform.system }:
 
+# Define kernel version, download path and Alpine configs to use
 let
   version = "6.18.1";
 
@@ -25,25 +27,56 @@ let
   kernelConfig = if system == "x86_64-linux" then x86Config else aarch64Config;
 in
 
+# Define some platform-specific variables
+let
+  inherit (pkgs.stdenv.hostPlatform) isx86_64 isAarch64;
+
+  kernelConfig =
+    if isx86_64 then x86Config
+    else if isAarch64 then aarch64Config
+    else throw "Unsupported platform: ${pkgs.stdenv.hostPlatform.system}";
+
+  kernelMakeTarget =
+    if isx86_64 then "bzImage"
+    else if isAarch64 then "Image"
+    else throw "Unsupported platform: ${pkgs.stdenv.hostPlatform.system}";
+
+  kernelImagePath =
+    if isx86_64 then "arch/x86/boot/bzImage"
+    else if isAarch64 then "arch/arm64/boot/Image"
+    else throw "Unsupported platform: ${pkgs.stdenv.hostPlatform.system}";
+
+  # If we're running aarch64, disable CRYPTO_AEGIS128_SIMD
+  # to avoid build failures on the default ARM-based GitHub runners
+  # See: https://github.com/NixOS/nixpkgs/blob/6812bcfd614abedbdb3f68d7b6554eda6ca3e014/pkgs/os-specific/linux/kernel/common-config.nix#L1458-L1459
+  extraConfigCommands = pkgs.lib.optionalString isAarch64 ''
+    scripts/config --disable CRYPTO_AEGIS128_SIMD
+  '';
+in
+
 pkgs.stdenv.mkDerivation {
   pname = "nekos-kernel";
   inherit version src;
 
-  # Reproducibility
-  #
-  # We no longer set SOURCE_DATE_EPOCH here as Nix sets it automatically based on the
-  # most recent mtime of the files in the source root, which should always be deterministic
-  # for the same pinned kernel source tarball
+  # KBuild reproducibility
+  # (SOURCE_DATE_EPOCH not needed as Nix handles this itself based on the newest
+  # file found when the source tarball gets unpacked)
+  KBUILD_ABS_SRCTREE = "0";
+  KBUILD_BUILD_HOST = "nekos";
   KBUILD_BUILD_TIMESTAMP = "1970-01-01 00:00:00 UTC";
   KBUILD_BUILD_USER = "builder";
-  KBUILD_BUILD_HOST = "nekos";
-  KBUILD_ABS_SRCTREE = "0";
-  GZIP = "-n";
-  XZ_DEFAULTS = "--threads=1 --no-adjust";
+  KBUILD_BUILD_VERSION = "1";
+
+  # Pin locale for reproducibility
   LANG = "C";
   LC_ALL = "C";
   TZ = "UTC";
-  KCFLAGS = "-O2 -g -ffile-prefix-map=${src}=. -fdebug-prefix-map=${src}=.";
+
+  # Try and make any compression processes
+  # more deterministic than they might be
+  # by default
+  GZIP = "-n";
+  XZ_DEFAULTS = "--threads=1 --no-adjust";
 
   nativeBuildInputs = with pkgs; [
     bc
@@ -74,6 +107,7 @@ pkgs.stdenv.mkDerivation {
     scripts/config --disable GCC_PLUGINS
     scripts/config --disable IKCONFIG
     scripts/config --disable IKHEADERS
+    scripts/config --disable LOCALVERSION_AUTO
     scripts/config --disable STACK_VALIDATION
     scripts/config --disable SYSTEM_REVOCATION_KEYS
     scripts/config --disable SYSTEM_TRUSTED_KEYS
@@ -85,15 +119,8 @@ pkgs.stdenv.mkDerivation {
     scripts/config --set-str LOCALVERSION "-nekos"
     make olddefconfig
 
-    # If we're running aarch64, disable CRYPTO_AEGIS128_SIMD
-    # to avoid build failures on the default ARM-based GitHub runners
-    #
-    # https://github.com/NixOS/nixpkgs/blob/6812bcfd614abedbdb3f68d7b6554eda6ca3e014/pkgs/os-specific/linux/kernel/common-config.nix#L1458-L1459
-    case "${system}" in
-      aarch64-linux)
-        scripts/config --disable CRYPTO_AEGIS128_SIMD
-      ;;
-    esac
+    # Import any arch-specific commands we defined earlier
+    ${extraConfigCommands}
 
     # Run make olddefconfig again just to make sure
     # See: https://github.com/NixOS/nixpkgs/blob/09eb77e94fa25202af8f3e81ddc7353d9970ac1b/pkgs/os-specific/linux/kernel/generate-config.pl#L128-L132
@@ -102,40 +129,25 @@ pkgs.stdenv.mkDerivation {
     runHook postConfigure
   '';
 
+  # Build kernel
   buildPhase = ''
     runHook preBuild
 
-    # Build appropriate kernel type based on our architecture
-    case "${system}" in
-      x86_64-linux)
-        make -j1 V=0 KCFLAGS="$KCFLAGS" bzImage
-      ;;
-      aarch64-linux)
-        make -j1 V=0 KCFLAGS="$KCFLAGS" Image
-      ;;
-    esac
+    make \
+      -j$NIX_BUILD_CORES \
+      V=0 \
+      ${kernelMakeTarget}
 
     runHook postBuild
   '';
 
+  # Copy built artefacts into output directory
   installPhase = ''
     runHook preInstall
 
-    # Create output dir
     mkdir -p $out
-
-    # Copy appropriate kernel type based on our architecture
-    case "${system}" in
-      x86_64-linux)
-        cp -fv arch/x86/boot/bzImage $out/kernel
-      ;;
-      aarch64-linux)
-        cp -fv arch/arm64/boot/Image $out/kernel
-      ;;
-    esac
-
-    # Copy the final config we used for this kernel build so we
-    # can keep it to track the differences over time
+    cp -fv ${kernelImagePath} $out/kernel
+    cp -fv ${kernelConfig} $out/kernelconfig-alpine
     cp -fv .config $out/kernelconfig-nekos
 
     runHook postInstall
