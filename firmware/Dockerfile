@@ -1,5 +1,8 @@
 FROM docker.io/nixos/nix:latest as builder
 
+# Enable the Nix CLI so we can actually run `nix build`
+ENV NIX_CONFIG="experimental-features = nix-command flakes"
+
 # Re-enable Nix sandbox (requires running with --privileged)
 # Without this, we won't get properly reproducible builds
 #

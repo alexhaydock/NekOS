@@ -1,18 +1,18 @@
+<div align="center">
+<img src="logo.png" alt="NekOS Logo" width="256" />
+
 # NekOS
 
-![NekOS Logo](logo.png)
+**An OS that only displays pictures of my cats.**
 
-An OS that only displays pictures of my cats.
-
-It's fully Secure Boot signed with a custom keychain, and packed into a single [Unified Kernel Image](https://wiki.archlinux.org/title/Unified_kernel_image).
+**Made with 😸 for 💻.**
+</div>
 
 ## Demo
 [Video Demo](https://github.com/user-attachments/assets/6ddb556b-715a-49c7-aeaa-9b11f98f9e4b)
 
 ## Wait, what?
-This is a research and development Linux distribution that I put together with the aim of learning more about the interaction between firmware, kernel, and low-level boot processes. To do this, it's helpful to have a "minimum viable product" distribution that I can control every aspect of. And why not make it do something at least vaguely interesting in the process?
-
-I'm hoping to use this to research Verified Boot, Confidential Compute, and "Bring Your Own Firmware" type setups for physical-access threat models.
+This is my Minimum Viable Product Linux distro. It's built as a research project with the goals of being byte-for-byte reproducible, allowing full measured boot, and supporting attestation via AMD SEV-SNP.
 
 ### Key Features
 * Pictures of my cats!
@@ -29,7 +29,8 @@ I'm hoping to use this to research Verified Boot, Confidential Compute, and "Bri
 * Custom userland based on BusyBox
 * Kernel + userland packed into a Unified Kernel Image (UKI)
 * UKI signed with a custom Secure Boot keychain
-* Support for running a macOS (Apple Silicon) host, including all the Secure Boot functionality
+* Support for running on a macOS (Apple Silicon) host, including all the Secure Boot functionality
+* Byte-for-byte reproducible (WIP - See [Reproducible Builds](#reproducible-builds) section)
 
 ## Boot Sequence (Direct UKI boot)
 In the direct-boot flow, the build processes in this repo produce a NekOS UKI, signed for UEFI Secure Boot.
@@ -79,6 +80,7 @@ To build and test this, you need `podman`, and `qemu`.
 
 Since this makes use of the QEMU [Host UEFI variable service](https://www.qemu.org/docs/master/devel/uefi-vars.html#host-uefi-variable-service), you will need at least QEMU 10 to make full use of this.
 
+### Dependencies
 Install dependencies (Fedora):
 ```sh
 sudo dnf install -y podman qemu
@@ -89,10 +91,18 @@ Install dependencies (macOS):
 brew install podman qemu
 ```
 
-Build all components:
+### Build All The Things!
+If you haven't built any of the NekOS components before, you will want to build the whole ecosystem.
+
+Run this if you want to build everything:
 ```sh
 ./build-all
 ```
+
+This is also the same command used by the GitHub Actions runners, so that all components are being continually validated.
+
+### Building Selectively
+Selective builds are useful for development to avoid full rebuilds if you're working on only a subset of the system.
 
 Build just kernel, initramfs, and direct-booting UKI:
 ```sh
@@ -131,11 +141,8 @@ Current tests:
 | fw,kernel,initramfs,uki,sb-pass,virtio | As above, but using a VirtIO GPU rather than the default `stdvga`. |
 | microvm,kernel,initramfs,serialonly | Run the kernel & initramfs as a MicroVM. We only expect text output here. |
 
-## Reproducibility
-
-NekOS is built with the goal of being fully reproducible. With the exception of cryptographic signing keys, all components should be byte-for-byte reproducible.
-
-This is a long-term work in progress, tracked [on this project board](https://github.com/users/alexhaydock/projects/1/views/1).
+## Reproducible Builds
+NekOS is built with the goal of being byte-for-byte reproducible. This is a long-term work in progress, tracked [on this project board](https://github.com/users/alexhaydock/projects/1/views/1).
 
 | **Component** | **Reproducible?** | **Method** | **Notes** |
 |---|---|---|---|
@@ -146,15 +153,17 @@ This is a long-term work in progress, tracked [on this project board](https://gi
 | stboot UKI | ❌ |  | Not investigated yet. |
 | stboot OS ZIP | ❌ |  | Not investigated yet. |
 
+## Component Versions
+As part of the effort to ensure reproducibility, the upstream components and build environments used to produce NekOS are pinned.
+
+For more info, see [VERSIONS.md](VERSIONS.md) in the root of this repo.
+
 ## Future Plans
 * Consider signing UKIs for Secure Boot using a YubiKey as a HSM:
   * https://docs.system-transparency.org/st-1.3.0/docs/how-to/secure-boot/sign-efi-applications/yubikey/
 * Reproducible firmware build with ability to pre-compute SEV hashes, allowing for Confidential Compute in BYOF environments
-  * Like how AWS do it for [their EDK II build](https://github.com/aws/uefi), which uses Nix to guarantee reproducibility
   * Add the SEV-SNP measurements into the build process using [sev-snp-measure](https://github.com/virtee/sev-snp-measure) or something similar.
   * I want to add in `snpguest` to validate AMD SEV-SNP from inside the OS, and compare it to the firmware build above.
-* Move the whole build system to Nix rather than Dockerfiles (if that allows for better reproducibility).
-  * See AWS's UEFI firmware build [here](https://github.com/aws/uefi/tree/main).
 * Add more cats!
 
 ## License

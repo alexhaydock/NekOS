@@ -23,7 +23,7 @@ podman run --rm -it \
 arch="$(uname -m)"
 case "$arch" in
     "x86_64" | "amd64")
-        if ! echo 'b27672fc06e02bd49386364fae9d8d10e317103c75ba36b4808cefe46772c942  build/kernel' \
+        if ! echo 'b62297fcac2507811253033a2ced2ad1fb53e33a7f30a74da00ce4414af07926  build/kernel' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
             exit 1
@@ -32,7 +32,7 @@ case "$arch" in
         fi
     ;;
     "aarch64" | "arm64")
-        if ! echo '60a061834a7ece47243511fe5e44c3ab0488f7fa2df6efd005bf4ffbcda3a762  build/kernel' \
+        if ! echo '7af07c0698082308bc2afb431008c7d42467572a2ce48f4a58db4229dcce84e7  build/kernel' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
             exit 1
