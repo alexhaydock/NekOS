@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build with Nix using deterministic options
-nix-build --pure --option sandbox true --cores 1
+nix-build --pure --option sandbox true
 
 # Hash output
 sha256sum /opt/nixbuild/result/firmware.fd
