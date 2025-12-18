@@ -20,7 +20,8 @@ jobs:
 
       # This is deeply cursed and creates a frankenbuntu, but it works
       # and we need to do it to get a newer version of Podman that
-      # actually supports heredocs.
+      # actually supports heredocs (allows us to borrow from StageX's
+      # upstream Containerfiles without rewriting them)
       #
       # The version shipped in 24.04 should support them really, but
       # Canonical have patched it out:
