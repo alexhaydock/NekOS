@@ -27,7 +27,7 @@ case "$arch" in
         fi
     ;;
     "aarch64" | "arm64")
-        if ! echo '0000000000000000000000000000000000000000000000000000000000000000  build/initramfs' \
+        if ! echo '1823835ed8c19e5536d9aaf6e87e35caf54da3ebb6ae57f24a5dbe1b1fdf8f5a  build/initramfs' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
             exit 1
