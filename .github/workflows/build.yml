@@ -18,10 +18,22 @@ jobs:
       - name: Free up GitHub runner space
         run: ./.github/gh-action-free-space.sh
 
-      # We can't run Podman-in-Podman directly in GitHub Actions
-      # so we need to use this community-maintained action
-      - name: Emulate Docker CLI with Podman
-        uses: k8s-crafts/podman-cli-action@v1
+      # This is deeply cursed and creates a frankenbuntu, but it works
+      # and we need to do it to get a newer version of Podman that
+      # actually supports heredocs (allows us to borrow from StageX's
+      # upstream Containerfiles without rewriting them)
+      #
+      # The version shipped in 24.04 should support them really, but
+      # Canonical have patched it out:
+      #   https://github.com/containers/buildah/issues/5474#issuecomment-2058440179
+      #
+      # This fix can be retired when GitHub update the `ubuntu-latest`
+      # runner to Ubuntu 26.04
+      - name: Install Podman from Ubuntu 25.04
+        run: |
+          sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu plucky main universe" > /etc/apt/sources.list.d/plucky.list'
+          sudo apt update
+          sudo apt install -y podman conmon crun runc
 
       - name: Run buildscript
         run: ./build-all
@@ -45,10 +57,15 @@ jobs:
       - name: Free up GitHub runner space
         run: ./.github/gh-action-free-space.sh
 
-      # We can't run Podman-in-Podman directly in GitHub Actions
-      # so we need to use this community-maintained action
-      - name: Emulate Docker CLI with Podman
-        uses: k8s-crafts/podman-cli-action@v1
+      # Note the subtle difference between this and the amd64 version!
+      #
+      # For aarch64 packages, we need to use ports.ubuntu.com rather than
+      # archive.ubuntu.com
+      - name: Install Podman from Ubuntu 25.04
+        run: |
+          sudo sh -c 'echo "deb http://ports.ubuntu.com/ubuntu-ports plucky main universe" > /etc/apt/sources.list.d/plucky.list'
+          sudo apt update
+          sudo apt install -y podman conmon crun runc
 
       - name: Run buildscript
         run: ./build-all

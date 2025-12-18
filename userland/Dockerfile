@@ -1,31 +1,66 @@
 # Container to build BusyBox
 FROM docker.io/library/alpine:3.23 as busybuild
 
+# Enter BusyBox version and sha256sum here
+ARG BUSYVER="1.37.0"
+ARG BUSYSHA="3311dff32e746499f4df0d5df04d7eb396382d7e108bb9250e7b519b837043a4"
+
+# Enter Alpine package versions here
+#
+# TODO: This obviously isn't the cleanest method of
+#       version-pinning and I probably want to do something
+#       a bit more like StageX, but this does actually work...
+#
+# Pin these based on: https://pkgs.alpinelinux.org
+ENV APK_ALPINE_SDK="1.1-r0"
+ENV APK_BASH="5.3.3-r1"
+ENV APK_CPIO="2.15-r0"
+ENV APK_FINDUTILS="4.10.0-r0"
+ENV APK_GCC="15.2.0-r2"
+ENV APK_LIBUDEV_ZERO="1.0.3-r7"
+ENV APK_LINUX_HEADERS="6.16.12-r0"
+ENV APK_MAKE="4.4.1-r3"
+ENV APK_MUSL_DEV="1.2.5-r21"
+ENV APK_SEATD="0.9.1-r0"
+ENV APK_SWAYIMG="4.6-r0"
+ENV APK_WAYLAND_PROTOCOLS="1.46-r0"
+ENV APK_WLROOTS="0.19.2-r0"
+
 # Determinism
-ENV SOURCE_DATE_EPOCH=0
+ENV CFLAGS="-O2 -g0 -ffile-prefix-map=/opt=/usr/src"
+ENV KCONFIG_NOTIMESTAMP=1
 ENV LANG=C
 ENV LC_ALL=C
-ENV TZ=UTC
-ENV CFLAGS="-O2 -g0 -ffile-prefix-map=/opt=/usr/src"
 ENV LDFLAGS="-Wl,--build-id=none"
+ENV SOURCE_DATE_EPOCH=0
+ENV TZ=UTC
 
 # See: https://github.com/tianon/dockerfiles/blob/master/toybox/Dockerfile
 RUN apk --no-cache add \
-    bash \
-    cpio \
-    findutils \
-    gcc \
-    git \
-    linux-headers \
-    make \
-    musl-dev
+    bash=${APK_BASH} \
+    cpio=${APK_CPIO} \
+    findutils=${APK_FINDUTILS} \
+    gcc=${APK_GCC} \
+    linux-headers=${APK_LINUX_HEADERS} \
+    make=${APK_MAKE} \
+    musl-dev=${APK_MUSL_DEV}
 
-RUN git clone --depth 1 https://git.busybox.net/busybox /opt/busybox
-
-WORKDIR /opt/busybox
-
-# Generate default BusyBox config
-RUN make defconfig
+# Download BusyBox
+#
+# Seems a bit brittle because BusyBox's website is very slow
+# and seems to sporadically break or take a long time to reply,
+# but there's not much I can do as the source tarballs don't
+# seem to have any obvious mirrors
+RUN wget --quiet \
+      https://busybox.net/downloads/busybox-${BUSYVER}.tar.bz2 \
+      -O /opt/busybox.tar.bz2 && \
+    if ! echo "${BUSYSHA}  /opt/busybox.tar.bz2" | sha256sum -c; then \
+        echo 'Build does not match expected checksum!' && exit 1; \
+    else \
+        echo 'Build matches expected checksum!'; \
+    fi && \
+    tar xf /opt/busybox.tar.bz2 -C /opt && \
+    mv -fv /opt/busybox-${BUSYVER} /opt/busybox
 
 # Build BusyBox as a static binary, and set some options.
 #
@@ -42,11 +77,51 @@ RUN make defconfig
 #
 # We need to hardcode the destination directory that `make install`
 # will later use here for some reason, in the CONFIG_PREFIX var.
-RUN sed -i 's;^# CONFIG_STATIC is not set;CONFIG_STATIC=y;' .config && \
-    sed -i 's;^CONFIG_TC=y;# CONFIG_TC is not set;' .config && \
-    sed -i 's;^CONFIG_FEATURE_TC_INGRESS=y;# CONFIG_FEATURE_TC_INGRESS is not set;' .config && \
-    sed -i 's;^CONFIG_PREFIX=.*;CONFIG_PREFIX="/opt/userland";' .config && \
-    grep -E 'CONFIG_STATIC|CONFIG_TC|CONFIG_FEATURE_TC_INGRESS|CONFIG_PREFIX' .config
+#
+# Heavily inspired by StageX's deterministic BusyBox build:
+# See: https://codeberg.org/stagex/stagex/src/commit/4a9058f6cc16dc81f762543d768176762b600dd7/packages/core/busybox/Containerfile
+WORKDIR /opt/busybox
+RUN --network=none <<-EOF
+  set -eux
+  setConfs='
+      CONFIG_LAST_SUPPORTED_WCHAR=0
+      CONFIG_PREFIX="/opt/userland"
+      CONFIG_STATIC=y
+  '
+  unsetConfs='
+      CONFIG_FEATURE_HAVE_RPC
+      CONFIG_FEATURE_INETD_RPC
+      CONFIG_FEATURE_SYNC_FANCY
+      CONFIG_FEATURE_TC_INGRESS
+      CONFIG_FEATURE_UTMP
+      CONFIG_FEATURE_WTMP
+      CONFIG_SHA1_HWACCEL
+      CONFIG_TC
+  '
+  make defconfig
+  for conf in $unsetConfs; do
+    sed -i \
+      -e "s!^$conf=.*\$!# $conf is not set!" \
+    .config
+  done
+  for confV in $setConfs; do
+    conf="${confV%=*}"
+    sed -i \
+      -e "s!^$conf=.*\$!$confV!" \
+      -e "s!^# $conf is not set\$!$confV!" \
+      .config
+    if ! grep -q "^$confV\$" .config; then
+      echo "$confV" >> .config
+    fi
+  done
+  make oldconfig
+  for conf in $unsetConfs; do
+    ! grep -q "^$conf=" .config
+  done
+  for confV in $setConfs; do
+    grep -q "^$confV\$" .config
+  done
+EOF
 
 # Build BusyBox
 RUN make -j"$(nproc)"
@@ -85,7 +160,8 @@ RUN chmod +x /opt/userland/init
 
 # Discover the version of wlroots that this release of Alpine is shipping
 # (lazily, by installing the package)
-RUN apk --no-cache add wlroots && \
+RUN apk --no-cache add \
+      wlroots=${APK_WLROOTS} && \
     apk info wlroots 2>/dev/null | head -n1 | awk '{print $1}' | cut -d'-' -f2 > /opt/wlver
 
 # Download the source for the version of wlroots that matches what we've got from APK
@@ -97,46 +173,13 @@ RUN wget --quiet \
     rm -v /opt/wlroots.tar.gz && \
     mv -v "/opt/wlroots-$(cat /opt/wlver)" /opt/wlroots
 
-# Build wlroots
-# Based on: https://gitlab.freedesktop.org/wlroots/wlroots/-/blob/abf80b529e48823e21215a6ccc4653e2c2a4a565/.builds/alpine.yml
-#
-# REMOVED since we didn't actually use the whole wlroots
-# build here -- we were just copying in tinywl which we
-# can (and do) build independently below
-#
-#WORKDIR /opt/wlroots
-#RUN apk --no-cache add \
-#    alpine-sdk \
-#    eudev-dev \
-#    glslang \
-#    lcms2-dev \
-#    libdisplay-info-dev \
-#    libinput-dev \
-#    libliftoff-dev \
-#    libxkbcommon-dev \
-#    mesa-dev \
-#    meson \
-#    pixman-dev \
-#    vulkan-headers \
-#    vulkan-loader-dev \
-#    wayland-dev \
-#    wayland-protocols \
-#    xcb-util-image-dev \
-#    xcb-util-renderutil-dev \
-#    xcb-util-wm-dev \
-#    xwayland-dev \
-#    libseat-dev \
-#    hwdata-dev
-#RUN meson setup build --fatal-meson-warnings --default-library=both -Dauto_features=enabled -Dxcb-errors=disabled --buildtype=debugoptimized
-#RUN ninja -C build
-
 # Build tinywl
 # Based on: https://gitlab.freedesktop.org/wlroots/wlroots/-/blob/abf80b529e48823e21215a6ccc4653e2c2a4a565/tinywl/README.md
 WORKDIR /opt/wlroots/tinywl
 RUN apk --no-cache add \
-    alpine-sdk \
-    wayland-protocols \
-    wlroots-dev
+    alpine-sdk=${APK_ALPINE_SDK} \
+    wayland-protocols=${APK_WAYLAND_PROTOCOLS} \
+    wlroots-dev=${APK_WLROOTS}
 RUN make
 
 # Copy the tinywl compositor into our distro filesystem
@@ -156,11 +199,17 @@ RUN for i in $(ldd /opt/userland/bin/tinywl | grep '=>' | awk '{print $3}'); do 
 # We cheat again here and directly unpack the Alpine binary build
 # in the root of the initramfs, which puts everything from the
 # package into the right directories
+#
+# TODO: Invocations of apk fetch need to use --recursive for some
+#       reason, due to this bug:
+#       https://gitlab.alpinelinux.org/alpine/apk-tools/-/merge_requests/281#note_522820
 WORKDIR /opt/userland
-RUN apk --no-cache fetch seatd && \
+RUN apk --no-cache fetch --recursive \
+      seatd=${APK_SEATD} && \
     tar xf seatd*.apk && \
     rm seatd*.apk
-RUN apk --no-cache add seatd && \
+RUN apk --no-cache add \
+      seatd=${APK_SEATD} && \
     for i in $(ldd /opt/userland/usr/bin/seatd | grep '=>' | awk '{print $3}'); do \
       cp -fv "${i}" "/opt/userland${i}"; \
     done
@@ -170,31 +219,14 @@ RUN apk --no-cache add seatd && \
 #
 # This package only provides libs, so we don't need to worry
 # about doing any ldd magic here
-RUN apk --no-cache fetch libudev-zero && \
+RUN apk --no-cache fetch --recursive \
+      libudev-zero=${APK_LIBUDEV_ZERO} && \
     tar xf libudev-zero*.apk && \
     rm libudev-zero*.apk
 
-# Add nyancat for fun so we can test something that's non-graphical
-# but which uses more complex ANSI escape sequences to paint colours
-RUN apk --no-cache fetch nyancat && \
-    tar xf nyancat*.apk && \
-    rm nyancat*.apk
-RUN apk --no-cache add nyancat && \
-    for i in $(ldd /opt/userland/usr/bin/nyancat | grep '=>' | awk '{print $3}'); do \
-      cp -fv "${i}" "/opt/userland${i}"; \
-    done
-
-# Add mokutil for testing Secure Boot is working
-RUN apk --no-cache fetch mokutil && \
-    tar xf mokutil*.apk && \
-    rm mokutil*.apk
-RUN apk --no-cache add mokutil && \
-    for i in $(ldd /opt/userland/usr/bin/mokutil | grep '=>' | awk '{print $3}'); do \
-      cp -fv "${i}" "/opt/userland${i}"; \
-    done
-
 # Add swayimg as our graphical image viewer
-RUN apk --no-cache fetch swayimg && \
+RUN apk --no-cache fetch --recursive \
+      swayimg=${APK_SWAYIMG} && \
     tar xf swayimg*.apk && \
     rm swayimg*.apk
 RUN apk --no-cache add swayimg && \
@@ -214,10 +246,11 @@ RUN chmod +x /opt/userland/.bashrc
 RUN cp -rfv /usr/share/X11/ /opt/userland/usr/share/X11/
 
 # Container to build our filesystem into an initramfs
-FROM docker.io/library/alpine:3.23 as initramfs
+FROM busybuild as initramfs
 
 # Install deps for initramfs building
-RUN apk --no-cache add cpio
+RUN apk --no-cache add \
+      cpio=${APK_CPIO}
 
 # Copy our BusyBox build so far
 RUN mkdir -p /opt/userland
@@ -225,14 +258,20 @@ COPY --from=busybuild /opt/userland /opt/userland
 
 # Enter our BusyBox dir and pack our compressed initramfs
 #
-# Pipe through `sort -z `first to deterministically sort file output
-# to help with reproducibility
-#
-# Also run gzip with the -n flag to avoid embedding timestamps
-WORKDIR /opt/userland
-RUN apk --no-cache add findutils && \
-    find . -print0 | sort -z | cpio --null -o --format=newc > /opt/initramfs.cpio && \
-    gzip -n < /opt/initramfs.cpio > /opt/initramfs && \
+# Based on StageX's example initramfs build as part of the
+# demo "ReprOS" project:
+# https://codeberg.org/stagex/repros/src/commit/eee4c999efd13fe51c29d009bf0ea1abe049892a/src/guest/Containerfile#L82-L100
+RUN find . -exec touch -hcd "@0" "{}" + && \
+    find . -print0 \
+    | sort -z \
+    | cpio \
+        --null \
+        --create \
+        --verbose \
+        --reproducible \
+        --format=newc \
+    | gzip --best \
+    > /opt/initramfs && \
     find . -type f -printf '%s %p\n' | sort -nr > /opt/initramfs.txt
 
 # Final container that just contains our gzipped initramfs and nothing more
