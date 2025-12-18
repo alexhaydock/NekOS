@@ -18,11 +18,6 @@ jobs:
       - name: Free up GitHub runner space
         run: ./.github/gh-action-free-space.sh
 
-      # We can't run Podman-in-Podman directly in GitHub Actions
-      # without this, seemingly
-      - name: Emulate Docker CLI with Podman
-        run: sudo apt -y install podman-docker
-
       - name: Run buildscript
         run: ./build-all
 
@@ -44,11 +39,6 @@ jobs:
 
       - name: Free up GitHub runner space
         run: ./.github/gh-action-free-space.sh
-
-      # We can't run Podman-in-Podman directly in GitHub Actions
-      # without this, seemingly
-      - name: Emulate Docker CLI with Podman
-        run: sudo apt -y install podman-docker
 
       - name: Run buildscript
         run: ./build-all
