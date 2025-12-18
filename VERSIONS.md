@@ -13,6 +13,12 @@ This page details the upstream software projects used to produce NekOS, along wi
 | Kernel | Nix Build Environment | `flake.lock` | Manually update pinned versions periodically (see below). |
 | Kernel | Linux Kernel | `pkgs.fetchurl` with pinned version string in `version` variable and pinned SHA256. | Update to latest stable periodically [from kernel.org](https://kernel.org/). |
 | Kernel | Alpine Kernel Config | `pkgs.fetchurl` with pinned SHA256 | Update to latest `virt.*.config` file [from upstream](https://gitlab.alpinelinux.org/alpine/aports/-/tree/master/main/linux-lts) when kernel version is rev'd. |
+| Userland | Alpine Container | Partial. Uses `docker.io/library/alpine:3.23`. Reproducibility relies mostly on pinning the build packages. Container can be pinned by hash if required. | Rev on new major Alpine releases. |
+| Userland | Alpine Build Environment | Pinned to specific versions using APK with ENV vars in the Dockerfile. | Validate and update in the Dockerfile periodically. |
+| Userland | BusyBox | Pinned to latest full BusyBox release and SHA256 hash from `busybox.net`. | Review and update upstream releases periodically. |
+| Userland | `tinywl` | This is fetched and built from source based on the version that the APK package is pinned to in `${APK_WLROOTS}`. | Review and update periodically when updating APK package pins. |
+| UKI | Alpine Container | Partial. Uses `docker.io/library/alpine:3.23`. Reproducibility relies mostly on pinning the build packages. Container can be pinned by hash if required. | Rev on new major Alpine releases. |
+| UKI | `ukify` | _None_ | This is lazy, but I think packing the UKI is a fairly deterministic process either way. If upstream rev's of `ukify` break this assumption, I can pin it. |
 
 ### Updating Nix `flake.lock` pinned package versions
 The `flake.lock` pins the Nix Flake environment exactly. I version these in Git so the build environment is reproducible.

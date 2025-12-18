@@ -82,44 +82,45 @@ RUN wget --quiet \
 # See: https://codeberg.org/stagex/stagex/src/commit/4a9058f6cc16dc81f762543d768176762b600dd7/packages/core/busybox/Containerfile
 WORKDIR /opt/busybox
 RUN --network=none <<-EOF
-	set -eux
-	setConfs='
-	    CONFIG_LAST_SUPPORTED_WCHAR=0
-	    CONFIG_STATIC=y
-        CONFIG_PREFIX="/opt/userland"
-	'
-	unsetConfs='
-	    CONFIG_FEATURE_SYNC_FANCY
-	    CONFIG_FEATURE_HAVE_RPC
-	    CONFIG_FEATURE_INETD_RPC
-	    CONFIG_FEATURE_UTMP
-	    CONFIG_FEATURE_WTMP
-        CONFIG_TC
-        CONFIG_FEATURE_TC_INGRESS
-	'
-	make defconfig
-	for conf in $unsetConfs; do
-		sed -i \
-			-e "s!^$conf=.*\$!# $conf is not set!" \
-		.config
-	done
-	for confV in $setConfs; do
-		conf="${confV%=*}"
-		sed -i \
-			-e "s!^$conf=.*\$!$confV!" \
-			-e "s!^# $conf is not set\$!$confV!" \
-			.config
-		if ! grep -q "^$confV\$" .config; then
-			echo "$confV" >> .config
-		fi
-	done
-	make oldconfig
-	for conf in $unsetConfs; do
-		! grep -q "^$conf=" .config
-	done
-	for confV in $setConfs; do
-		grep -q "^$confV\$" .config
-	done
+  set -eux
+  setConfs='
+      CONFIG_LAST_SUPPORTED_WCHAR=0
+      CONFIG_PREFIX="/opt/userland"
+      CONFIG_STATIC=y
+  '
+  unsetConfs='
+      CONFIG_FEATURE_HAVE_RPC
+      CONFIG_FEATURE_INETD_RPC
+      CONFIG_FEATURE_SYNC_FANCY
+      CONFIG_FEATURE_TC_INGRESS
+      CONFIG_FEATURE_UTMP
+      CONFIG_FEATURE_WTMP
+      CONFIG_SHA1_HWACCEL
+      CONFIG_TC
+  '
+  make defconfig
+  for conf in $unsetConfs; do
+    sed -i \
+      -e "s!^$conf=.*\$!# $conf is not set!" \
+    .config
+  done
+  for confV in $setConfs; do
+    conf="${confV%=*}"
+    sed -i \
+      -e "s!^$conf=.*\$!$confV!" \
+      -e "s!^# $conf is not set\$!$confV!" \
+      .config
+    if ! grep -q "^$confV\$" .config; then
+      echo "$confV" >> .config
+    fi
+  done
+  make oldconfig
+  for conf in $unsetConfs; do
+    ! grep -q "^$conf=" .config
+  done
+  for confV in $setConfs; do
+    grep -q "^$confV\$" .config
+  done
 EOF
 
 # Build BusyBox

@@ -15,7 +15,7 @@ podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp ul -fv /opt/ini
 arch="$(uname -m)"
 case "$arch" in
     "x86_64" | "amd64")
-        if ! echo '0130b05adcc46b5c39f1934390704ffcf7d0829e9d962a072a5767aacfaa68ad  build/initramfs' \
+        if ! echo '8f1e1d66e9637e46861979510e0a629827fb00ae1e1eb54ff16fdcd5e739e4fc  build/initramfs' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
             exit 1

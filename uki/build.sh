@@ -25,7 +25,7 @@ podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp uki -fv /opt/uk
 arch="$(uname -m)"
 case "$arch" in
     "x86_64" | "amd64")
-        if ! echo '518d5f671ba6e8df3fa14031aaf22c903e16c451fe2b18b2254c0eab11bc7a14  build/uki.unsigned.efi' \
+        if ! echo '3c1dd15443a55e5440f3fa17076ffb28fd55bdfebcc034123372fe4e7ae17b15  build/uki.unsigned.efi' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
             exit 1
