@@ -18,12 +18,16 @@ jobs:
       - name: Free up GitHub runner space
         run: ./.github/gh-action-free-space.sh
 
-      # This isn't particularly nice, but it works and we need to do it
-      # to get a newer version of Podman that actually supports heredocs
+      # This is deeply cursed and creates a frankenbuntu, but it works
+      # and we need to do it to get a newer version of Podman that
+      # actually supports heredocs.
       #
-      # The version shipped in 24.04 should support them really, but Ubuntu
-      # have patched it out:
+      # The version shipped in 24.04 should support them really, but
+      # Canonical have patched it out:
       #   https://github.com/containers/buildah/issues/5474#issuecomment-2058440179
+      #
+      # This fix can be retired when GitHub update the `ubuntu-latest`
+      # runner to Ubuntu 26.04
       - name: Install Podman from Ubuntu 25.04
         run: |
           sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu plucky main universe" > /etc/apt/sources.list.d/plucky.list'
@@ -52,9 +56,13 @@ jobs:
       - name: Free up GitHub runner space
         run: ./.github/gh-action-free-space.sh
 
+      # Note the subtle difference between this and the amd64 version!
+      #
+      # For aarch64 packages, we need to use ports.ubuntu.com rather than
+      # archive.ubuntu.com
       - name: Install Podman from Ubuntu 25.04
         run: |
-          sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu plucky main universe" > /etc/apt/sources.list.d/plucky.list'
+          sudo sh -c 'echo "deb http://ports.ubuntu.com/ubuntu-ports plucky main universe" > /etc/apt/sources.list.d/plucky.list'
           sudo apt update
           sudo apt install -y podman conmon crun runc
 
