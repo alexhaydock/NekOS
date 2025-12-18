@@ -81,7 +81,7 @@ RUN wget --quiet \
 # Heavily inspired by StageX's deterministic BusyBox build:
 # See: https://codeberg.org/stagex/stagex/src/commit/4a9058f6cc16dc81f762543d768176762b600dd7/packages/core/busybox/Containerfile
 WORKDIR /opt/busybox
-RUN <<EOF
+RUN --network=none <<-EOF
   set -eux
   setConfs='
       CONFIG_LAST_SUPPORTED_WCHAR=0
