@@ -39,7 +39,7 @@ case "$arch" in
         fi
     ;;
     "aarch64" | "arm64")
-        if ! echo '0000000000000000000000000000000000000000000000000000000000000000  build/uki.unsigned.efi' \
+        if ! echo '148b065ba9964ccd49d0e7190abc8e183d97c3b8129132b4198245a63c25d569  build/uki.unsigned.efi' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
             exit 1
