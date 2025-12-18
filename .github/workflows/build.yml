@@ -19,9 +19,9 @@ jobs:
         run: ./.github/gh-action-free-space.sh
 
       # We can't run Podman-in-Podman directly in GitHub Actions
-      # so we need to use this community-maintained action
+      # without this, seemingly
       - name: Emulate Docker CLI with Podman
-        uses: k8s-crafts/podman-cli-action@v1
+        run: sudo apt -y install podman-docker
 
       - name: Run buildscript
         run: ./build-all
@@ -46,9 +46,9 @@ jobs:
         run: ./.github/gh-action-free-space.sh
 
       # We can't run Podman-in-Podman directly in GitHub Actions
-      # so we need to use this community-maintained action
+      # without this, seemingly
       - name: Emulate Docker CLI with Podman
-        uses: k8s-crafts/podman-cli-action@v1
+        run: sudo apt -y install podman-docker
 
       - name: Run buildscript
         run: ./build-all
