@@ -18,6 +18,11 @@ podman build --target final -t uki .
 podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp uki -fv /opt/uki.unsigned.efi /opt/out/uki.unsigned.efi
 podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp uki -fv /opt/uki.efi /opt/out/uki.efi
 
+# Hash output
+sha256sum \
+  build/uki.unsigned.efi \
+  build/uki.efi
+
 # Validate build hash based on architecture
 # (we do this for the unsigned UKI only since the signed one
 # depends on cryptographic private keys which independent

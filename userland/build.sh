@@ -11,6 +11,9 @@ podman build --target final -t ul .
 podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp ul -fv /opt/initramfs /opt/out/initramfs
 podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp ul -fv /opt/initramfs.txt /opt/out/initramfs_filelist.txt
 
+# Hash output
+sha256sum build/initramfs
+
 # Validate build hash based on architecture
 arch="$(uname -m)"
 case "$arch" in
