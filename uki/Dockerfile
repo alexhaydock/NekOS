@@ -14,6 +14,15 @@ COPY src/initramfs /opt/initramfs
 # Copy in our Secure Boot keys
 COPY keys/ /opt/keys
 
+# Build unsigned UKI
+#
+# IMPORTANT, as this is the one we'll validate for
+# reproducibility purposes
+RUN ukify build \
+    --output "/opt/uki.unsigned.efi" \
+    --linux "/opt/kernel" \
+    --initrd "/opt/initramfs"
+
 # Build signed UKI
 RUN ukify build \
     --output "/opt/uki.efi" \
