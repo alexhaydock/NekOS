@@ -18,6 +18,18 @@ jobs:
       - name: Free up GitHub runner space
         run: ./.github/gh-action-free-space.sh
 
+      # This isn't particularly nice, but it works and we need to do it
+      # to get a newer version of Podman that actually supports heredocs
+      #
+      # The version shipped in 24.04 should support them really, but Ubuntu
+      # have patched it out:
+      #   https://github.com/containers/buildah/issues/5474#issuecomment-2058440179
+      - name: Install Podman from Ubuntu 25.04
+        run: |
+          sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu plucky main universe" > /etc/apt/sources.list.d/plucky.list'
+          sudo apt update
+          sudo apt install -y podman
+
       - name: Run buildscript
         run: ./build-all
 
@@ -39,6 +51,12 @@ jobs:
 
       - name: Free up GitHub runner space
         run: ./.github/gh-action-free-space.sh
+
+      - name: Install Podman from Ubuntu 25.04
+        run: |
+          sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu plucky main universe" > /etc/apt/sources.list.d/plucky.list'
+          sudo apt update
+          sudo apt install -y podman
 
       - name: Run buildscript
         run: ./build-all
