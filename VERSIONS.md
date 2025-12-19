@@ -4,7 +4,7 @@ This page details the upstream software projects used to produce NekOS, along wi
 
 ### Version Pinning Matrix
 
-| Component | Software | Pinning Method | Update Info |
+| Component | Software | Version Pinning Method | Update Info |
 |---|---|---|---|
 | Firmware | Nix Container | _None_ | Uses `docker.io/nixos/nix:latest`. Build env pinning is left to `flake.lock`. |
 | Firmware | Nix Build Environment | `flake.lock` | Manually update pinned versions periodically (see below). |
@@ -19,6 +19,10 @@ This page details the upstream software projects used to produce NekOS, along wi
 | Userland | `tinywl` | This is fetched and built from source based on the version that the APK package is pinned to in `${APK_WLROOTS}`. | Review and update periodically when updating APK package pins. |
 | UKI | Alpine Container | Partial. Uses `docker.io/library/alpine:3.23`. Reproducibility relies mostly on pinning the build packages. Container can be pinned by hash if required. | Rev on new major Alpine releases. |
 | UKI | `ukify` | _None_ | This is lazy, but I think packing the UKI is a fairly deterministic process either way. If upstream rev's of `ukify` break this assumption, I can pin it. |
+| stboot | Golang Container | _None_. | Uses `docker.io/library/golang:alpine`. Build env pinning is done explicitly as below. |
+| stboot | Golang Build Environment | _None_. | Uses Alpine underneath so packages could be version-pinned with APK if required. |
+| stboot | `stmgr` | Go package pinned by version. | Update when version is rev'd as per [upstream NEWS file](https://github.com/system-transparency/stmgr/blob/main/NEWS). |
+| stboot | `stimages` | Git clone pinned by cloning a specific release branch. | Update when version is rev'd as per [upstream tags](https://git.glasklar.is/system-transparency/core/stimages/-/tags). |
 
 ### Updating Nix `flake.lock` pinned package versions
 The `flake.lock` pins the Nix Flake environment exactly. I version these in Git so the build environment is reproducible.
