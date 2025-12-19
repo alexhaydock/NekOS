@@ -22,14 +22,14 @@ if [ "$(uname -m)" == "x86_64" ]; then
     podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp stboot -fv /opt/nekos.json /opt/out/nekos.json
     podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp stboot -fv /opt/nekos.zip /opt/out/nekos.zip
     podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp stboot -fv /opt/nekos.signed.zip /opt/out/nekos.signed.zip
-fi
 
-# Hash output
-sha256sum \
-  build/stboot.efi \
-  build/stboot.signed.efi \
-  build/nekos.zip \
-  build/nekos.signed.zip
+    # Hash output
+    sha256sum \
+      build/stboot.efi \
+      build/stboot.signed.efi \
+      build/nekos.zip \
+      build/nekos.signed.zip
+fi
 
 # Validate UKI build hash based on architecture
 # (we do this for the unsigned UKI only since the signed one

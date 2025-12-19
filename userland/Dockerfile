@@ -47,20 +47,39 @@ RUN apk --no-cache add \
 
 # Download BusyBox
 #
-# Seems a bit brittle because BusyBox's website is very slow
-# and seems to sporadically break or take a long time to reply,
-# but there's not much I can do as the source tarballs don't
-# seem to have any obvious mirrors
-RUN wget --quiet \
-      https://busybox.net/downloads/busybox-${BUSYVER}.tar.bz2 \
-      -O /opt/busybox.tar.bz2 && \
-    if ! echo "${BUSYSHA}  /opt/busybox.tar.bz2" | sha256sum -c; then \
-        echo 'Build does not match expected checksum!' && exit 1; \
-    else \
-        echo 'Build matches expected checksum!'; \
-    fi && \
-    tar xf /opt/busybox.tar.bz2 -C /opt && \
+# BusyBox's website is notoriously flaky, either for the
+# direct .tar.bz2 downloads, or for git clones, so we handle
+# this with a simple loop that allows a few attempts at
+# downloading before giving up, so we don't fail a whole CI
+# run just because of a failed download here.
+RUN <<-EOF
+    set -e
+    attempts=0
+    max_attempts=3
+    while [ "$attempts" -lt "$max_attempts" ]; do
+        attempts=$((attempts + 1))
+        echo "Downloading BusyBox (attempt $attempts/$max_attempts)..."
+
+        if wget --quiet \
+            https://busybox.net/downloads/busybox-${BUSYVER}.tar.bz2 \
+            -O /opt/busybox.tar.bz2; then
+            break
+        fi
+        if [ "$attempts" -eq "$max_attempts" ]; then
+            echo "BusyBox download failed after $max_attempts attempts"
+            exit 1
+        fi
+
+        sleep 2
+    done
+    if ! echo "${BUSYSHA}  /opt/busybox.tar.bz2" | sha256sum -c; then
+        echo 'Download does not match expected checksum!' && exit 1
+    else
+        echo 'Download matches expected checksum!'
+    fi
+    tar xf /opt/busybox.tar.bz2 -C /opt
     mv -fv /opt/busybox-${BUSYVER} /opt/busybox
+EOF
 
 # Build BusyBox as a static binary, and set some options.
 #
