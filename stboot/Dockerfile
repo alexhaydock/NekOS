@@ -4,11 +4,11 @@ FROM docker.io/library/golang:alpine as stbootuki
 # https://docs.system-transparency.org/st-1.3.0/docs/introduction/build/
 RUN apk --no-cache add \
     bash \
+    binutils \
     ca-certificates \
     coreutils \
     cpio \
     git \
-    go \
     pigz \
     sbsigntool
 
@@ -44,37 +44,51 @@ WORKDIR /opt/stimages
 RUN /opt/stimages/contrib/stboot/build-stboot \
     http://10.0.2.2:8000/nekos.json \
     keys/rootcert.pem \
-    uki
+    uki && \
+    mv -fv /opt/stimages/stboot.uki /opt/stimages/stboot.efi
 
 # Sign stboot UKI (with Secure Boot keys)
 RUN sbsign \
     --key /opt/stimages/keys/db-priv.pem \
     --cert /opt/stimages/keys/db-cert.pem \
-    --output /opt/stimages/stboot.uki.signed \
-    /opt/stimages/stboot.uki
+    --output /opt/stimages/stboot.signed.efi \
+    /opt/stimages/stboot.efi
 
 # Validate UKI to make sure signing succeeded
 RUN sbverify \
     --cert /opt/stimages/keys/db-cert.pem \
-    /opt/stimages/stboot.uki.signed
+    /opt/stimages/stboot.signed.efi
 
 # Build OS image with ospkg create
+#
+# Make a copy so we have preserved this before we
+# make it non-reproducible by signing it
 RUN stmgr ospkg create \
     --label="NekOS" \
     --initramfs=/opt/initramfs \
     --kernel=/opt/kernel \
-    --url=http://10.0.2.2:8000/nekos.zip \
-    --out=nekos.zip
+    --url=http://10.0.2.2:8000/nekos.signed.zip \
+    --out=nekos.zip && \
+    cp -fv /opt/stimages/nekos.zip /opt/stimages/nekos.unsigned.zip
 
-# Sign OS package (with stboot keys)
+# Sign nekos.zip package (with stboot keys)
 RUN stmgr ospkg sign \
     --cert keys/cert.pem \
     --key keys/key.pem \
     --ospkg nekos
 
-# Final container that just contains our stboot UKI, OS image, and JSON manifest
+# Final container that just contains our stboot UKI,
+# OS image, and JSON manifest
 FROM docker.io/library/alpine:3.23 as final
-COPY --from=stbootuki /opt/stimages/stboot.uki.signed /opt/stboot.uki.signed
+COPY --from=stbootuki /opt/stimages/stboot.efi /opt/stboot.efi
+COPY --from=stbootuki /opt/stimages/stboot.signed.efi /opt/stboot.signed.efi
 COPY --from=stbootuki /opt/stimages/nekos.json /opt/nekos.json
-COPY --from=stbootuki /opt/stimages/nekos.zip /opt/nekos.zip
+
+# Copy stboot ZIP files so they match the naming
+# scheme we're using for the kernel and UKI
+# (where the signed image has ".signed." in the 
+# filename)
+COPY --from=stbootuki /opt/stimages/nekos.zip /opt/nekos.signed.zip
+COPY --from=stbootuki /opt/stimages/nekos.unsigned.zip /opt/nekos.zip
+
 WORKDIR /opt

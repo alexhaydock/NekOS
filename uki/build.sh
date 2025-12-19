@@ -15,22 +15,22 @@ podman build --target final -t uki .
 #podman run --rm -it uki
 
 # Run container to copy UKI into output dir
-podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp uki -fv /opt/uki.unsigned.efi /opt/out/uki.unsigned.efi
 podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp uki -fv /opt/uki.efi /opt/out/uki.efi
+podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp uki -fv /opt/uki.signed.efi /opt/out/uki.signed.efi
 
 # Hash output
 sha256sum \
-  build/uki.unsigned.efi \
-  build/uki.efi
+  build/uki.efi \
+  build/uki.signed.efi
 
-# Validate build hash based on architecture
+# Validate UKI build hash based on architecture
 # (we do this for the unsigned UKI only since the signed one
 # depends on cryptographic private keys which independent
 # verifiers aren't going to be in possession of)
 arch="$(uname -m)"
 case "$arch" in
     "x86_64" | "amd64")
-        if ! echo '3c1dd15443a55e5440f3fa17076ffb28fd55bdfebcc034123372fe4e7ae17b15  build/uki.unsigned.efi' \
+        if ! echo '3c1dd15443a55e5440f3fa17076ffb28fd55bdfebcc034123372fe4e7ae17b15  build/uki.efi' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
             exit 1
@@ -39,7 +39,7 @@ case "$arch" in
         fi
     ;;
     "aarch64" | "arm64")
-        if ! echo '148b065ba9964ccd49d0e7190abc8e183d97c3b8129132b4198245a63c25d569  build/uki.unsigned.efi' \
+        if ! echo '148b065ba9964ccd49d0e7190abc8e183d97c3b8129132b4198245a63c25d569  build/uki.efi' \
             | sha256sum -c; then
             echo 'Build does not match expected checksum!'
             exit 1
