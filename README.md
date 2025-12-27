@@ -119,12 +119,12 @@ To build any of the individual components, enter the directory for that componen
 ./build.sh
 ```
 
-## Running Tests
-Since this is a R&D project, there's no real "production" deployment for this and all of the main functionality exists in the `tests/` directory.
+## Running in QEMU
+Since this is a R&D project, there's no real "production" deployment for this and all of the main functionality exists in the `deploy/` directory.
 
-The tests will launch QEMU with various elements of our OS loaded/enabled.
+The scripts in this directory will launch QEMU with various elements of our OS loaded/enabled.
 
-Current tests:
+Current deployments:
 
 | **Test** | **Notes** |
 |---|---|
@@ -147,7 +147,7 @@ NekOS is built with the goal of being byte-for-byte reproducible. This is a long
 | **Component** | **Reproducible?** | **Method** | **Notes** |
 |---|---|---|---|
 | Firmware | ✅ | Nix build inside Podman, inspired by [aws/uefi](https://github.com/aws/uefi). | Only reproducible on x86_64 at the moment, but not a huge issue since SEV-SNP is an x86-only feature. |
-| Kernel | ✅ | Nix build inside Podman. See [kernel docs on reproducible builds](https://www.kernel.org/doc/html/v6.18/kbuild/reproducible-builds.html). | Reproducible, but I think there's still some Nix build paths leaking into the kernel image as _any_ change to the `default.nix` no matter how irrelevant leads to a different kernel hash. |
+| Kernel | ✅ | Nix build inside Podman. See [kernel docs on reproducible builds](https://www.kernel.org/doc/html/v6.18/kbuild/reproducible-builds.html). | Reproducible, but I think there's still some Nix build paths leaking into the kernel image as _any_ change to the `flake.nix` no matter how irrelevant leads to a different kernel hash. |
 | Userland | ✅ | Docker build with various deterministic build flags, and pinning of Alpine APK package versions. | Reproducible, though I don't like the APK pinning approach long-term. Will probably move to Nix or StageX at some point. |
 | NekOS UKI | ✅ | Deterministic by default. | This one is _definitely_ lazy but it works for now. I think this is just deterministic by default. If that changes on future `ukify` updates I can start pinning versions. |
 | stboot UKI | ❌ |  | Not investigated yet. |
