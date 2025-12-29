@@ -66,10 +66,19 @@ build_stboot() {
     )  
 }
 
-time build_keygen   | tee logs/build_keygen.log
-time build_efivars  | tee logs/build_efivars.log
-time build_firmware | tee logs/build_firmware.log
-time build_kernel   | tee logs/build_kernel.log
-time build_userland | tee logs/build_userland.log
-time build_uki      | tee logs/build_uki.log
-time build_stboot   | tee logs/build_stboot.log
+test_all() {
+    ./test-all
+}
+
+run_all() {
+    time build_keygen   | tee logs/build_keygen.log
+    time build_efivars  | tee logs/build_efivars.log
+    time build_firmware | tee logs/build_firmware.log
+    time build_kernel   | tee logs/build_kernel.log
+    time build_userland | tee logs/build_userland.log
+    time build_uki      | tee logs/build_uki.log
+    time build_stboot   | tee logs/build_stboot.log
+    time test_all       | tee logs/test_all.log
+}
+
+time run_all

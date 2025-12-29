@@ -23,6 +23,10 @@ def build_filename():
 def expected_hash():
     return sha256
 
+@pytest.fixture
+def arch():
+    return arch
+
 def test_hash(build_filename, expected_hash, arch):
     # Skip the test if we're using a dummy string for the hash
     if expected_hash == "0":
