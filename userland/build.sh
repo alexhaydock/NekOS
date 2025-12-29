@@ -15,7 +15,10 @@ podman run --rm -it -v "$(pwd)/build:/opt/out:Z" --entrypoint cp ul -fv /opt/ini
 sha256sum build/initramfs
 
 # Validate build hash based on architecture
-pytest -v ../tests/test_userland.py
+(
+    cd ..
+    pytest -v tests/test_userland.py
+)
 
 # echo reminder
 echo ""

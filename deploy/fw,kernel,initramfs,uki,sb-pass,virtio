@@ -25,11 +25,11 @@ ${qemu} \
   -m 2G \
   -cpu host \
   -machine ${machine} \
-  -kernel ../uki/build/uki.efi \
+  -kernel ../uki/build/uki.signed.efi \
   -drive if=pflash,format=raw,unit=0,file=../firmware/build/firmware.fd,readonly=on \
   -device ${vartype},jsonfile=/tmp/OVMF_VARS_CUSTOM.json \
   -append "console=tty0" \
   -serial mon:stdio \
   -vga none \
-  -device ${virtiogpu},xres=1920,yres=1080 \
+  -device ${virtiogpu},xres=1280,yres=800 \
   -display ${display}

@@ -20,4 +20,7 @@ podman run --rm -it \
 # file changes the derivation hash, which ends up changing the resulting
 # kernel hash. I can only assume that this is down to some build paths
 # leaking into the final build somehow still, but I'm not 100% sure.
-pytest -v ../tests/test_kernel.py
+(
+    cd ..
+    pytest -v tests/test_kernel.py
+)

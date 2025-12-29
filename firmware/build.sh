@@ -14,4 +14,7 @@ podman run --rm -it \
     firmwarebuilder
 
 # Validate build hash based on architecture
-pytest -v ../tests/test_firmware.py
+(
+    cd ..
+    pytest -v tests/test_firmware.py
+)

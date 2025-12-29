@@ -24,4 +24,7 @@ sha256sum \
   build/uki.signed.efi
 
 # Validate build hash based on architecture
-pytest -v ../tests/test_uki.py
+(
+    cd ..
+    pytest -v tests/test_uki.py
+)
