@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+pytest -v \
+  tests/test_firmware.py \
+  tests/test_kernel.py \
+  tests/test_userland.py \
+  tests/test_uki.py

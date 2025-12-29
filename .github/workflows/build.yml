@@ -35,6 +35,10 @@ jobs:
           sudo apt update
           sudo apt install -y podman conmon crun runc
 
+      - name: Install pytest
+        run: |
+          sudo apt install -y python3-pytest
+
       - name: Run buildscript
         run: ./build-all
 
@@ -66,6 +70,10 @@ jobs:
           sudo sh -c 'echo "deb http://ports.ubuntu.com/ubuntu-ports plucky main universe" > /etc/apt/sources.list.d/plucky.list'
           sudo apt update
           sudo apt install -y podman conmon crun runc
+
+      - name: Install pytest
+        run: |
+          sudo apt install -y python3-pytest
 
       - name: Run buildscript
         run: ./build-all
