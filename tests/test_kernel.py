@@ -26,10 +26,10 @@ def expected_hash():
 def current_arch():
     return arch
 
-def test_hash(build_filename, expected_hash, arch):
+def test_hash(build_filename, expected_hash, current_arch):
     # Skip the test if we're using a dummy string for the hash
     if expected_hash == "0":
-        pytest.skip("Build for " + arch + " architecture is not yet reproducible")
+        pytest.skip("Build for " + current_arch + " architecture is not yet reproducible")
 
     with open(build_filename, 'rb') as f:
         file_hash = hashlib.sha256()
