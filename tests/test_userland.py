@@ -13,7 +13,6 @@ with open("tests/hashes.csv", newline="") as f:
         if row["component"] == component and row["arch"] == arch:
             filename = row["filename"]
             sha256 = row["sha256"]
-            print(filename, sha256)
 
 @pytest.fixture
 def build_filename():
@@ -24,7 +23,7 @@ def expected_hash():
     return sha256
 
 @pytest.fixture
-def arch():
+def current_arch():
     return arch
 
 def test_hash(build_filename, expected_hash, arch):
