@@ -1,9 +1,11 @@
 # Container to build BusyBox
 FROM docker.io/library/alpine:3.23 as busybuild
 
-# Enter BusyBox version and sha256sum here
-ARG BUSYVER="1.37.0"
-ARG BUSYSHA="3311dff32e746499f4df0d5df04d7eb396382d7e108bb9250e7b519b837043a4"
+# Enter the sha256sum of the BusyBox commit from the Debian Salsa repo
+# that we want to pin
+#
+# See: https://salsa.debian.org/installer-team/busybox
+ARG BUSYSHA="38c5d06635796cf09587f9b7e033b3c101b3186e"
 
 # Enter Alpine package versions here
 #
@@ -51,9 +53,14 @@ RUN apk --no-cache add \
 #
 # BusyBox's website is notoriously flaky, either for the
 # direct .tar.bz2 downloads, or for git clones, so we pull
-# the source from Debian's GitLab instance instead
-RUN git clone --depth 1 https://salsa.debian.org/installer-team/busybox.git /opt/busybox
+# the source from Debian's GitLab instance instead.
+#
+# We only pull to a depth of 10 so if we're resetting to
+# a commit before that, then will probably fail. But that'd
+# probably be a good time to bump the pinned commit anyway.
+RUN git clone --depth 10 https://salsa.debian.org/installer-team/busybox.git /opt/busybox
 WORKDIR /opt/busybox
+RUN git reset --hard "${BUSYSHA}"
 
 # Build BusyBox as a static binary, and set some options.
 #
