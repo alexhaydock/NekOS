@@ -1,9 +1,11 @@
 # Container to build BusyBox
 FROM docker.io/library/alpine:3.23 as busybuild
 
-# Enter BusyBox version and sha256sum here
-ARG BUSYVER="1.37.0"
-ARG BUSYSHA="3311dff32e746499f4df0d5df04d7eb396382d7e108bb9250e7b519b837043a4"
+# Enter the sha256sum of the BusyBox commit from the Debian Salsa repo
+# that we want to pin
+#
+# See: https://salsa.debian.org/installer-team/busybox
+ARG BUSYSHA="38c5d06635796cf09587f9b7e033b3c101b3186e"
 
 # Enter Alpine package versions here
 #
@@ -17,6 +19,7 @@ ENV APK_BASH="5.3.3-r1"
 ENV APK_CPIO="2.15-r0"
 ENV APK_FINDUTILS="4.10.0-r0"
 ENV APK_GCC="15.2.0-r2"
+ENV APK_GIT="2.52.0-r0"
 ENV APK_LIBUDEV_ZERO="1.0.3-r7"
 ENV APK_LINUX_HEADERS="6.16.12-r0"
 ENV APK_MAKE="4.4.1-r3"
@@ -41,6 +44,7 @@ RUN apk --no-cache add \
     cpio=${APK_CPIO} \
     findutils=${APK_FINDUTILS} \
     gcc=${APK_GCC} \
+    git=${APK_GIT} \
     linux-headers=${APK_LINUX_HEADERS} \
     make=${APK_MAKE} \
     musl-dev=${APK_MUSL_DEV}
@@ -48,38 +52,15 @@ RUN apk --no-cache add \
 # Download BusyBox
 #
 # BusyBox's website is notoriously flaky, either for the
-# direct .tar.bz2 downloads, or for git clones, so we handle
-# this with a simple loop that allows a few attempts at
-# downloading before giving up, so we don't fail a whole CI
-# run just because of a failed download here.
-RUN <<-EOF
-    set -e
-    attempts=0
-    max_attempts=3
-    while [ "$attempts" -lt "$max_attempts" ]; do
-        attempts=$((attempts + 1))
-        echo "Downloading BusyBox (attempt $attempts/$max_attempts)..."
-
-        if wget --quiet \
-            https://busybox.net/downloads/busybox-${BUSYVER}.tar.bz2 \
-            -O /opt/busybox.tar.bz2; then
-            break
-        fi
-        if [ "$attempts" -eq "$max_attempts" ]; then
-            echo "BusyBox download failed after $max_attempts attempts"
-            exit 1
-        fi
-
-        sleep 2
-    done
-    if ! echo "${BUSYSHA}  /opt/busybox.tar.bz2" | sha256sum -c; then
-        echo 'Download does not match expected checksum!' && exit 1
-    else
-        echo 'Download matches expected checksum!'
-    fi
-    tar xf /opt/busybox.tar.bz2 -C /opt
-    mv -fv /opt/busybox-${BUSYVER} /opt/busybox
-EOF
+# direct .tar.bz2 downloads, or for git clones, so we pull
+# the source from Debian's GitLab instance instead.
+#
+# We only pull to a depth of 10 so if we're resetting to
+# a commit before that, then will probably fail. But that'd
+# probably be a good time to bump the pinned commit anyway.
+RUN git clone --depth 10 https://salsa.debian.org/installer-team/busybox.git /opt/busybox
+WORKDIR /opt/busybox
+RUN git reset --hard "${BUSYSHA}"
 
 # Build BusyBox as a static binary, and set some options.
 #
@@ -99,7 +80,6 @@ EOF
 #
 # Heavily inspired by StageX's deterministic BusyBox build:
 # See: https://codeberg.org/stagex/stagex/src/commit/4a9058f6cc16dc81f762543d768176762b600dd7/packages/core/busybox/Containerfile
-WORKDIR /opt/busybox
 RUN --network=none <<-EOF
   set -eux
   setConfs='
