@@ -32,12 +32,12 @@
           };
 
           x86Config = pkgs.fetchurl {
-            url = "https://gitlab.alpinelinux.org/alpine/aports/-/raw/fbcf0dfbf88d6089620716343684b96d4d034431/main/linux-lts/virt.x86_64.config";
+            url = "https://raw.githubusercontent.com/alpinelinux/aports/437e32efe599ae6127d04f6c5ba14b52d644d54a/main/linux-lts/virt.x86_64.config";
             sha256 = "sha256-zTbB0APDgSSdbbq1UpyrDx2XNrpIyRhW/6n5czc+VDg=";
           };
 
           aarch64Config = pkgs.fetchurl {
-            url = "https://gitlab.alpinelinux.org/alpine/aports/-/raw/fbcf0dfbf88d6089620716343684b96d4d034431/main/linux-lts/virt.aarch64.config";
+            url = "https://raw.githubusercontent.com/alpinelinux/aports/437e32efe599ae6127d04f6c5ba14b52d644d54a/main/linux-lts/virt.aarch64.config";
             sha256 = "sha256-LvDuCwlba3sv2f+FcXdgmWK+xx0tkHIY2rWj7DgzUUw=";
           };
 
