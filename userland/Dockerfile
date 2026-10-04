@@ -23,9 +23,9 @@ ENV APK_GIT="2.52.0-r0"
 ENV APK_LIBUDEV_ZERO="1.0.3-r7"
 ENV APK_LINUX_HEADERS="6.16.12-r0"
 ENV APK_MAKE="4.4.1-r3"
-ENV APK_MUSL_DEV="1.2.5-r21"
+ENV APK_MUSL_DEV="1.2.5-r23"
 ENV APK_SEATD="0.9.1-r0"
-ENV APK_SWAYIMG="4.6-r0"
+ENV APK_SWAYIMG="4.7-r0"
 ENV APK_WAYLAND_PROTOCOLS="1.46-r0"
 ENV APK_WLROOTS="0.19.2-r0"
 
@@ -60,6 +60,7 @@ RUN apk --no-cache add \
 # probably be a good time to bump the pinned commit anyway.
 RUN git clone --depth 10 https://salsa.debian.org/installer-team/busybox.git /opt/busybox
 WORKDIR /opt/busybox
+RUN git fetch origin ${BUSYSHA}
 RUN git reset --hard "${BUSYSHA}"
 
 # Build BusyBox as a static binary, and set some options.
