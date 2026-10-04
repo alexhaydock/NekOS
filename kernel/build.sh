@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Label group for CI
+echo "::group::Building kernel"
+trap 'echo "::endgroup::"' EXIT
+
 # Build base container Nix
 podman build -t kernelbuilder .
 
@@ -22,5 +26,9 @@ podman run --rm -it \
 # leaking into the final build somehow still, but I'm not 100% sure.
 (
     cd ..
-    pytest -v tests/test_kernel.py
+    podman run --rm -it \
+        --workdir /opt \
+        -v "$(pwd):/opt:Z" \
+        docker.io/library/python:3-slim \
+            bash -c 'pip install pytest && pytest -v tests/test_kernel.py'
 )

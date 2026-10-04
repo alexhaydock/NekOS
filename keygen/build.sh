@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Label group for CI
+echo "::group::Generating keys"
+trap 'echo "::endgroup::"' EXIT
+
 # Build Secure Boot keys
 podman build --target final -t keygen .
 

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Label group for CI
+echo "::group::Building stboot"
+trap 'echo "::endgroup::"' EXIT
+
 # Copy kernel and initramfs into src/ directory
 cp -fv ../kernel/build/kernel src/kernel
 cp -fv ../userland/build/initramfs src/initramfs

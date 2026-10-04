@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-pytest -v \
-  tests/test_firmware.py \
-  tests/test_kernel.py \
-  tests/test_userland.py \
-  tests/test_uki.py
+podman run --rm -it \
+    --workdir /opt \
+    -v "$(pwd):/opt:Z" \
+    docker.io/library/python:3-slim \
+        bash -c 'pip install pytest && pytest -v \
+          tests/test_firmware.py \
+          tests/test_kernel.py \
+          tests/test_userland.py \
+          tests/test_uki.py'

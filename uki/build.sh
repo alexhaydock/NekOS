@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Label group for CI
+echo "::group::Building UKI"
+trap 'echo "::endgroup::"' EXIT
+
 # Copy kernel and initramfs into src/ directory
 cp -fv ../kernel/build/kernel src/kernel
 cp -fv ../userland/build/initramfs src/initramfs
@@ -26,5 +30,9 @@ sha256sum \
 # Validate build hash based on architecture
 (
     cd ..
-    pytest -v tests/test_uki.py
+    podman run --rm -it \
+        --workdir /opt \
+        -v "$(pwd):/opt:Z" \
+        docker.io/library/python:3-slim \
+            bash -c 'pip install pytest && pytest -v tests/test_uki.py'
 )

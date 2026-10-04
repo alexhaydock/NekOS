@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Label group for CI
+echo "::group::Generating EFI variables"
+trap 'echo "::endgroup::"' EXIT
+
 # Copy Secure Boot keys from keygen build
 cp -fv ../keygen/keys/* keys/
 
