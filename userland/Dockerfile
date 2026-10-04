@@ -60,6 +60,7 @@ RUN apk --no-cache add \
 # probably be a good time to bump the pinned commit anyway.
 RUN git clone --depth 10 https://salsa.debian.org/installer-team/busybox.git /opt/busybox
 WORKDIR /opt/busybox
+RUN git fetch origin ${BUSYSHA}
 RUN git reset --hard "${BUSYSHA}"
 
 # Build BusyBox as a static binary, and set some options.
