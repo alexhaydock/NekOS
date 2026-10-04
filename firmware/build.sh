@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Label group for CI
+echo "::group::Building EDK2 firmware"
+trap 'echo "::endgroup::"' EXIT
+
 # Build base container Nix
 podman build -t firmwarebuilder .
 
@@ -16,5 +20,9 @@ podman run --rm -it \
 # Validate build hash based on architecture
 (
     cd ..
-    pytest -v tests/test_firmware.py
+    podman run --rm -it \
+        --workdir /opt \
+        -v "$(pwd):/opt:Z" \
+        docker.io/library/python:3-slim \
+            bash -c 'pip install pytest && pytest -v tests/test_firmware.py'
 )

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Label group for CI
+echo "::group::Building userland"
+trap 'echo "::endgroup::"' EXIT
+
 # Build Toybox userland
 podman build --target final -t ul .
 
@@ -17,7 +21,11 @@ sha256sum build/initramfs
 # Validate build hash based on architecture
 (
     cd ..
-    pytest -v tests/test_userland.py
+    podman run --rm -it \
+        --workdir /opt \
+        -v "$(pwd):/opt:Z" \
+        docker.io/library/python:3-slim \
+            bash -c 'pip install pytest && pytest -v tests/test_userland.py'
 )
 
 # echo reminder
